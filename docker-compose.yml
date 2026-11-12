@@ -1,0 +1,18 @@
+# PostgreSQL 16 + ekstensi pgvector (pgvector dipakai chatbot RAG pada iterasi berikutnya).
+# Port 5434 dan nama kontainer dibedakan agar tidak bentrok dengan project sim-asprak penuh.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: sim-asprak-db
+    environment:
+      POSTGRES_DB: sim_asprak
+      POSTGRES_USER: sim_asprak
+      POSTGRES_PASSWORD: sim_asprak
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_login:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata_login:
