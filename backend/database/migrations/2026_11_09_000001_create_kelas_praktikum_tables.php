@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * US05 Mendaftarkan kelas praktikum, US06 Menetapkan asisten, US11 Nomor surat sertifikat.
- * Periode (semester) dan periode BAP dibentuk otomatis oleh sistem (KF-05.
+ * Periode (semester) dan periode BAP dibentuk otomatis oleh sistem (KF-05), lihat Periode::berjalan().
  */
 return new class extends Migration
 {
@@ -18,6 +18,10 @@ return new class extends Migration
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
             $table->string('nomor_surat', 50)->nullable()->unique(); // US11: satu nomor surat sertifikat per periode
+            $table->string('path_tanda_tangan', 255)->nullable(); // US10: tanda tangan digital direktur
+            $table->string('nama_penandatangan', 100)->nullable();
+            $table->string('nip_penandatangan', 30)->nullable();
+            $table->string('path_stempel', 255)->nullable();      // US10: stempel digital, dicetak di atas tanda tangan
         });
 
         Schema::create('periode_bap', function (Blueprint $table) {

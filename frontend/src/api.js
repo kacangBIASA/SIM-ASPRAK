@@ -14,10 +14,10 @@ export const token = {
     try { return localStorage.getItem(KUNCI_TOKEN); } catch { return null; }
   },
   simpan: (t) => {
-    try { localStorage.setItem(KUNCI_TOKEN, t); } catch { /* abaikan */ }
+    try { localStorage.setItem(KUNCI_TOKEN, t); } catch {}
   },
   hapus: () => {
-    try { localStorage.removeItem(KUNCI_TOKEN); } catch { /* abaikan */ }
+    try { localStorage.removeItem(KUNCI_TOKEN); } catch {}
   },
 };
 
@@ -58,11 +58,8 @@ async function json(res) {
 export const api = {
   get: async (path) => json(await kirim(path)),
   post: async (path, body) => json(await kirim(path, { method: 'POST', body })),
+  hapus: async (path) => json(await kirim(path, { method: 'DELETE' })),
 
-  /**
-   * Mengunduh berkas lewat tautan bertanda tangan: `path` mengembalikan { url, nama_berkas }
-   * setelah hak akses diperiksa, lalu browser (atau download manager) mengunduh dari tautan itu.
-   */
   async unduh(path) {
     const { url, nama_berkas: nama } = await json(await kirim(path));
     const a = Object.assign(document.createElement('a'), { href: url, download: nama, rel: 'noopener' });

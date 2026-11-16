@@ -18,15 +18,14 @@ abstract class TestCase extends BaseTestCase
         return $pengguna;
     }
 
-    /** Kelas baru pada periode tertentu (default: periode berjalan) dengan dosen pengampu baru. */
-    protected function buatKelas(?Periode $periode = null, string $kodeMk = 'SI3104', string $kodeKelas = 'IS-05-01'): KelasPraktikum
+    protected function buatKelas(?Periode $periode = null, string $kodeMk = 'SI3104', string $kodeKelas = 'IS-05-01', string $prodi = 'Sistem Informasi'): KelasPraktikum
     {
         $praktikum = Praktikum::firstOrCreate(
             ['id_periode' => ($periode ?? Periode::berjalan())->id_periode, 'kode_praktikum' => $kodeMk],
-            ['nama_praktikum' => "Praktikum $kodeMk", 'prodi' => 'Sistem Informasi'],
+            ['nama_praktikum' => "Praktikum $kodeMk"],
         );
 
-        return $praktikum->kelas()->create(['id_dosen' => Pengguna::factory()->dosen()->create()->id_pengguna, 'kode_kelas' => $kodeKelas]);
+        return $praktikum->kelas()->create(['id_dosen' => Pengguna::factory()->dosen()->create()->id_pengguna, 'kode_kelas' => $kodeKelas, 'prodi' => $prodi]);
     }
 
     protected function tugaskan(Pengguna $asisten, KelasPraktikum $kelas): void
@@ -34,7 +33,6 @@ abstract class TestCase extends BaseTestCase
         $kelas->asisten()->attach($asisten->id_pengguna, ['id_praktikum' => $kelas->id_praktikum]);
     }
 
-    /** @return array{Pengguna, KelasPraktikum} asisten yang ditugaskan pada kelas baru di periode berjalan. */
     protected function asistenDenganKelas(): array
     {
         $asisten = Pengguna::factory()->asisten()->create();

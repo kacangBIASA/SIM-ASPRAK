@@ -22,12 +22,12 @@ return new class extends Migration
             $table->bigIncrements('id_presensi');
             $table->foreignId('id_asisten')->constrained('pengguna', 'id_pengguna');
             $table->foreignId('id_kelas')->constrained('kelas_praktikum', 'id_kelas'); // kelas terisi otomatis dari penugasan (KF-03)
-            $table->foreignId('id_bap')->nullable()->constrained('bap', 'id_bap')->nullOnDelete(); // rekapitulasi US04
+            $table->foreignId('id_bap')->nullable()->constrained('bap', 'id_bap')->nullOnDelete(); // dipakai rekapitulasi US04
             $table->date('tanggal');
             $table->string('kegiatan', 150);
             $table->time('jam_masuk');
             $table->time('jam_keluar');
-            $table->string('foto_kegiatan', 255); 
+            $table->string('foto_kegiatan', 255);
         });
     }
 

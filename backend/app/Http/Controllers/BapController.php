@@ -3,134 +3,155 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bap;
+use App\Models\KelasPraktikum;
 use App\Models\Periode;
+use App\Models\PeriodeBap;
 use App\Models\Presensi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\Response;
 
-/** UC03 */
+/** UC03 Mengunduh BAP — KF-05, KF-06, KF-07. */
 class BapController extends Controller
 {
+    /** Basic course langkah 2 (KF-05): pilihan praktikum (kelas yang ditugaskan) dan pilihan periode BAP. */
     public function pilihan(Request $request): JsonResponse
     {
-        $periode = Periode::berjalan();
+        $berjalan = Periode::berjalan();
+        $kelas = $request->user()->kelasDitugaskan()->whereHas('praktikum.periode', fn ($q) => $q->whereDate('tanggal_mulai', '<=', now()->toDateString()))
+            ->with('praktikum.periode')->get()
+            ->sortBy([fn ($a, $b) => $b->praktikum->id_periode <=> $a->praktikum->id_periode, 'praktikum.nama_praktikum']);
 
-        return response()->json([
-            'periode' => $periode->nama_periode,
-            'praktikum' => $this->kelasAktif($request, $periode)->map(fn ($k) => [
-                'id_kelas' => $k->id_kelas,
-                'kode_praktikum' => $k->praktikum->kode_praktikum,
-                'nama_praktikum' => $k->praktikum->nama_praktikum,
-                'kode_kelas' => $k->kode_kelas,
-            ])->values(),
-            'periode_bap' => $periode->periodeBap->map(fn ($p) => [
-                'id_periode_bap' => $p->id_periode_bap,
-                'nama_periode_bap' => $p->nama_periode_bap,
-            ]),
-        ]);
+        $praktikum = $kelas->map(fn (KelasPraktikum $k) => [
+            'id_kelas' => $k->id_kelas,
+            'id_periode' => $k->praktikum->id_periode,
+            'label' => "{$k->praktikum->kode_praktikum} · {$k->praktikum->nama_praktikum} ({$k->kode_kelas})"
+                .($k->praktikum->id_periode === $berjalan->id_periode ? '' : " — {$k->praktikum->periode->nama_periode}"),
+        ])->values();
+
+        $periodeBap = PeriodeBap::whereIn('id_periode', $kelas->pluck('praktikum.id_periode'))
+            ->whereDate('tanggal_mulai', '<=', now()->toDateString())
+            ->orderByDesc('tanggal_mulai')
+            ->get(['id_periode_bap', 'id_periode', 'nama_periode_bap']);
+
+        return response()->json(['praktikum' => $praktikum, 'periode_bap' => $periodeBap]);
     }
 
+    /** Basic course langkah 3–5 (KF-06): susun BAP dari presensi pada periode itu, lalu kirim pratinjau. */
     public function susun(Request $request): JsonResponse
     {
-        $periode = Periode::berjalan();
         $asisten = $request->user();
 
         $data = $request->validate([
-            'id_kelas' => ['required', Rule::in($this->kelasAktif($request, $periode)->pluck('id_kelas'))],
-            'id_periode_bap' => ['required', Rule::in($periode->periodeBap->pluck('id_periode_bap'))],
+            'id_kelas' => ['required', Rule::in($asisten->kelasDitugaskan()->pluck('kelas_praktikum.id_kelas'))],
+            'tanggal_mulai' => ['required', 'date_format:Y-m-d'],
+            'tanggal_selesai' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_mulai'],
         ], [
             'id_kelas.required' => 'Praktikum wajib dipilih.',
-            'id_kelas.in' => 'Praktikum tidak valid atau bukan penugasan Anda pada periode berjalan.',
-            'id_periode_bap.required' => 'Periode BAP wajib dipilih.',
-            'id_periode_bap.in' => 'Periode BAP tidak valid.',
+            'id_kelas.in' => 'Praktikum tidak valid atau bukan penugasan Anda.',
+            'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
+            'tanggal_selesai.required' => 'Tanggal selesai wajib diisi.',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
         ]);
 
-        $periodeBap = $periode->periodeBap->firstWhere('id_periode_bap', (int) $data['id_periode_bap']);
+        $kelas = KelasPraktikum::with('praktikum')->findOrFail($data['id_kelas']);
+        $periodeBap = PeriodeBap::where('id_periode', $kelas->praktikum->id_periode)
+            ->whereDate('tanggal_mulai', '<=', $data['tanggal_selesai'])->whereDate('tanggal_selesai', '>=', $data['tanggal_selesai'])->first();
+
+        if (! $periodeBap) {
+            throw ValidationException::withMessages(['tanggal_selesai' => 'Tanggal selesai di luar semester praktikum ini.']);
+        }
+
         $presensi = Presensi::where('id_asisten', $asisten->id_pengguna)
-            ->where('id_kelas', $data['id_kelas'])
-            ->whereBetween('tanggal', [$periodeBap->tanggal_mulai->toDateString(), $periodeBap->tanggal_selesai->toDateString()])
+            ->where('id_kelas', $kelas->id_kelas)
+            ->whereBetween('tanggal', [$data['tanggal_mulai'], $data['tanggal_selesai']])
             ->pluck('id_presensi');
 
         if ($presensi->isEmpty()) {
-            throw ValidationException::withMessages([
-                'id_periode_bap' => 'Data presensi belum tersedia pada praktikum dan periode BAP yang dipilih.',
-            ]);
+            return response()->json(['message' => 'Data presensi pada rentang tanggal ini belum tersedia. Silakan ubah tanggal.'], 422);
         }
 
-        $bap = DB::transaction(function () use ($asisten, $data, $presensi) {
+        $idBapIni = Bap::where(['id_asisten' => $asisten->id_pengguna, 'id_kelas' => $kelas->id_kelas, 'tanggal_mulai' => $data['tanggal_mulai'], 'tanggal_selesai' => $data['tanggal_selesai']])->value('id_bap');
+        $pindah = Presensi::whereIn('id_presensi', $presensi)->whereNotNull('id_bap')->where('id_bap', '!=', $idBapIni ?? 0)->count();
+
+        $bap = DB::transaction(function () use ($asisten, $kelas, $periodeBap, $presensi, $data) {
             $bap = Bap::updateOrCreate(
-                ['id_asisten' => $asisten->id_pengguna, 'id_kelas' => $data['id_kelas'], 'id_periode_bap' => $data['id_periode_bap']],
-                ['tanggal_dibuat' => now()->toDateString()],
+                ['id_asisten' => $asisten->id_pengguna, 'id_kelas' => $kelas->id_kelas, 'tanggal_mulai' => $data['tanggal_mulai'], 'tanggal_selesai' => $data['tanggal_selesai']],
+                ['id_periode_bap' => $periodeBap->id_periode_bap, 'tanggal_dibuat' => now()->toDateString()],
             );
             Presensi::whereIn('id_presensi', $presensi)->update(['id_bap' => $bap->id_bap]);
 
             return $bap;
         });
 
-        return response()->json(['id_bap' => $bap->id_bap] + $this->isi($bap));
-    }
-
-    public function unduh(Request $request, Bap $bap): JsonResponse
-    {
-        abort_unless($bap->id_asisten === $request->user()->id_pengguna, 404);
-
         return response()->json([
-            'url' => URL::temporarySignedRoute('bap.berkas', now()->addMinutes(5), ['bap' => $bap->id_bap]),
-            'nama_berkas' => $this->namaBerkas($this->isi($bap)),
+            'data' => $this->isi($bap),
+            'peringatan' => $pindah ? "$pindah presensi pada rentang ini sebelumnya sudah masuk BAP lain dan kini dipindahkan ke BAP ini." : null,
         ]);
     }
 
-    public function berkas(Bap $bap): Response
+    public function tautan(Request $request, Bap $bap): JsonResponse
     {
-        $isi = $this->isi($bap);
+        if ((int) $bap->id_asisten !== (int) $request->user()->id_pengguna) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke BAP ini.'], 403);
+        }
 
-        return Pdf::loadView('pdf.bap', ['bap' => $isi])->setPaper('a4')->download($this->namaBerkas($isi));
+        return response()->json([
+            'url' => URL::temporarySignedRoute('bap.berkas', now()->addMinutes(5), ['bap' => $bap->id_bap]),
+            'nama_berkas' => $this->namaBerkas($bap),
+        ]);
     }
 
-    private function kelasAktif(Request $request, Periode $periode)
+    /** Basic course langkah 7 (KF-07): berkas PDF A4 yang dapat dicetak; hanya lewat tautan bertanda tangan. */
+    public function berkas(Bap $bap): Response
     {
-        return $request->user()->kelasDitugaskan()
-            ->whereHas('praktikum', fn ($q) => $q->where('id_periode', $periode->id_periode))
-            ->with('praktikum')->get()->sortBy('praktikum.nama_praktikum')->values();
+        return Pdf::loadView('pdf.bap', ['bap' => $this->isi($bap)])
+            ->setPaper('a4')
+            ->download($this->namaBerkas($bap));
     }
 
     private function isi(Bap $bap): array
     {
-        $bap->load('asisten', 'kelas.praktikum', 'kelas.dosen', 'periodeBap', 'presensi');
-        $akhir = $bap->periodeBap->tanggal_selesai;
-        $tgl = fn ($d) => $d->day.' '.Periode::BULAN[$d->month - 1].' '.$d->year;
+        $bap->load('asisten', 'kelas.praktikum', 'kelas.dosen', 'presensi');
+        $presensi = $bap->presensi;
+        $praktikum = $bap->kelas->praktikum;
+        $bulan = fn ($t) => Periode::BULAN[$t->month - 1];
 
         return [
+            'id_bap' => $bap->id_bap,
             'nama' => $bap->asisten->nama,
             'nim' => $bap->asisten->nomor_induk,
-            'bulan' => Periode::BULAN[$akhir->month - 1],
-            'tahun' => $akhir->year,
-            'prodi' => $bap->kelas->praktikum->prodi,
-            'kode_mk' => $bap->kelas->praktikum->kode_praktikum,
-            'nama_mk' => $bap->kelas->praktikum->nama_praktikum,
-            'total_jam' => Presensi::formatJam($bap->presensi->sum(fn ($p) => $p->durasiMenit())),
-            'baris' => $bap->presensi->map(fn (Presensi $p) => [
+            'bulan' => $presensi->map(fn ($p) => $bulan($p->tanggal))->unique()->implode(' - '),
+            'prodi' => $bap->kelas->prodi,
+            'kode_mk' => $praktikum->kode_praktikum,
+            'nama_mk' => $praktikum->nama_praktikum,
+            'tahun' => $presensi->last()->tanggal->year,
+            'total_jam' => Presensi::formatJam($presensi->sum(fn ($p) => $p->durasiMenit())),
+            'baris' => $presensi->map(fn (Presensi $p) => [
                 'hari' => $p->hari(),
-                'tanggal' => $tgl($p->tanggal),
+                'tanggal' => $p->tanggal->day.' '.$bulan($p->tanggal).' '.$p->tanggal->year,
                 'kelas' => $bap->kelas->kode_kelas,
                 'jam_masuk' => substr($p->jam_masuk, 0, 5),
                 'jam_keluar' => substr($p->jam_keluar, 0, 5),
                 'jumlah_jam' => Presensi::formatJam($p->durasiMenit()),
                 'modul' => $p->kegiatan,
-            ])->values()->all(),
-            'dosen' => $bap->kelas->dosen->nama,
+            ])->values(),
             'tanggal_dibuat' => $bap->tanggal_dibuat->format('j/n/Y'),
+            'dosen' => $bap->kelas->dosen->nama, // KF-06: dosen pengampu kelas tempat asisten ditugaskan
         ];
     }
 
-    private function namaBerkas(array $isi): string
+    private function namaBerkas(Bap $bap): string
     {
-        return str_replace(' ', '_', "BAP {$isi['nama']} {$isi['kode_mk']} {$isi['bulan']} {$isi['tahun']}.pdf");
+        return sprintf('BAP_%s_%s_%s.pdf',
+            $bap->asisten->nomor_induk ?? $bap->id_asisten,
+            $bap->kelas->praktikum->kode_praktikum,
+            $bap->tanggal_mulai->format('Ymd').'-'.$bap->tanggal_selesai->format('Ymd'),
+        );
     }
 }

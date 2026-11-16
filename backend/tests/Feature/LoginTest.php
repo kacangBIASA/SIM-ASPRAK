@@ -24,9 +24,23 @@ class LoginTest extends TestCase
             ->assertJsonMissingPath('pengguna.kata_sandi');
     }
 
+    public function test_lima_percobaan_gagal_mengunci_username_lalu_sandi_benar_pun_ditolak(): void
+    {
+        Pengguna::factory()->dosen()->create(['email' => 'dosen@test.id', 'username' => 'dosen9', 'kata_sandi' => 'rahasia123']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/login', ['login' => 'dosen9', 'kata_sandi' => 'salah'])->assertStatus(422);
+        }
+        $this->postJson('/api/login', ['login' => 'dosen9', 'kata_sandi' => 'rahasia123'])->assertStatus(422)
+            ->assertJsonPath('errors.login.0', fn ($m) => str_contains($m, 'Terlalu banyak percobaan'));
+        $this->postJson('/api/login', ['login' => 'dosen@test.id', 'kata_sandi' => 'rahasia123'])->assertStatus(422);
+        Pengguna::factory()->dosen()->create(['username' => 'dosen10', 'kata_sandi' => 'rahasia123']);
+        $this->postJson('/api/login', ['login' => 'dosen10', 'kata_sandi' => 'rahasia123'])->assertOk();
+    }
+
     public function test_login_dengan_username(): void
     {
-        Pengguna::factory()->create(['username' => 'asisten9', 'kata_sandi' => 'rahasia123']);
+        $this->tugaskan(Pengguna::factory()->create(['username' => 'asisten9', 'kata_sandi' => 'rahasia123']), $this->buatKelas());
 
         $this->postJson('/api/login', ['login' => 'asisten9', 'kata_sandi' => 'rahasia123'])
             ->assertOk()
@@ -69,12 +83,12 @@ class LoginTest extends TestCase
 
     public function test_profil_mengembalikan_pengguna_yang_login(): void
     {
-        $this->masukSebagai(Pengguna::factory()->laboran()->create(['email' => 'lab@test.id']));
+        $this->masukSebagai(Pengguna::factory()->admin()->create(['email' => 'lab@test.id']));
 
         $this->getJson('/api/me')
             ->assertOk()
             ->assertJsonPath('pengguna.email', 'lab@test.id')
-            ->assertJsonPath('pengguna.peran', 'laboran');
+            ->assertJsonPath('pengguna.peran', 'admin');
     }
 
     public function test_logout_mencabut_token(): void

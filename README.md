@@ -21,13 +21,12 @@ Dibangun bertahap per user story mengikuti Tabel 4.5.2 (Perencanaan iterasi) pad
 | 2 | US04 · US07 · US08 · US09 · US10 · US12 | ⏳ |
 | 3 | US13 · US14 · US15 · US16 | ⏳ |
 
-Menu yang belum dibangun menampilkan halaman "Segera hadir".
+Isi saat ini (iterasi 1):
 
-## Prasyarat
-
-- PHP 8.3+ dengan Composer (ekstensi `pdo_pgsql`, `gd`)
-- Node.js 20+ dan npm
-- Docker (untuk PostgreSQL)
+- **Asisten**: Presensi (`/api/presensi/form`, `POST /api/presensi`). BAP (`/api/bap/*`, unduh PDF lewat tautan bertanda tangan).
+- **Dosen**: Kelas Praktikum (`/api/kelas-praktikum`, tambah kelas). Penetapan asisten (`/api/kelas-praktikum/{id}/asisten`).
+- **Laboran**: Sertifikat → nomor surat periode berjalan (`/api/sertifikat/nomor-surat`). Status penilaian & tombol Terbitkan menyusul di US12.
+- Menu lain → "Segera hadir".
 
 ## Menjalankan
 
@@ -54,36 +53,16 @@ php artisan serve
 
 ```
 cd frontend
-npm install
-cp .env.example .env
-npm run dev
+npm run dev                  # http://localhost:5173
 ```
 
-Alamat API di frontend diatur lewat `VITE_API_URL` pada `frontend/.env` (bawaan `http://localhost:8000/api`).
+Akun uji (kata sandi `password`): `asisten1@gmail.com`…`asisten4@gmail.com`, `dosen1@gmail.com`, `dosen2@gmail.com`, `laboran@gmail.com`.
+Seeder juga membuat contoh kelas SI3104 (IS-05-01 dosen1, IS-05-02 dosen2) dan SI3107 (IS-05-01 dosen2) pada periode berjalan; asisten4 belum ditugaskan agar penetapan asisten bisa dicoba.
 
-## Akun uji
+Pengujian: `cd backend && php artisan test` (SQLite in-memory).
 
-Kata sandi semua akun: `password`.
-
-| Peran | Email |
-|---|---|
-| Asisten | `asisten1@gmail.com` … `asisten4@gmail.com` |
-| Dosen | `dosen1@gmail.com`, `dosen2@gmail.com` |
-| Laboran | `laboran@gmail.com` |
-
-Seeder membuat contoh kelas SI3104 (IS-05-01 dosen1, IS-05-02 dosen2) dan SI3107 (IS-05-01 dosen2) pada periode berjalan. `asisten4` sengaja belum ditugaskan agar penetapan asisten bisa dicoba.
-
-## Pengujian
-
-```
-cd backend
-php artisan test
-```
-
-Tes memakai SQLite in-memory, jadi tidak membutuhkan Docker.
-
-## Menambah user story berikutnya
+## Catatan untuk menambah user story berikutnya
 
 1. Tambah migration, model, dan controller untuk user story tersebut.
 2. Daftarkan rute di `backend/routes/api.php` (di dalam grup `auth:sanctum`, dengan `peran:…`).
-3. Tambah halaman di `frontend/src/pages/` dan daftarkan di `HALAMAN[peran][path]` pada `App.jsx` (menu sudah ada di `menu.js`).
+3. Tambah halaman di `frontend/src/pages/` dan daftarkan di `HALAMAN[peran][path]` pada `App.jsx` dan di `menu.js`.

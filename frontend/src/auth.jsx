@@ -28,18 +28,19 @@ export function AuthProvider({ children }) {
     return d.pengguna;
   }, []);
 
+  const segarkan = useCallback(() => api.get('/me').then((d) => setPengguna(d.pengguna)).catch(() => {}), []);
+
   const keluar = useCallback(async () => {
-    try { await api.post('/logout'); } catch { /* token mungkin sudah tidak berlaku */ }
+    try { await api.post('/logout'); } catch {}
     token.hapus();
     setPengguna(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ pengguna, memuat, masuk, keluar }}>
+    <AuthContext.Provider value={{ pengguna, memuat, masuk, keluar, segarkan }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

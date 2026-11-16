@@ -4,9 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * US01 Login — hanya tabel `pengguna` (Physical Data Model).
- */
+/** US01 Login — hanya tabel `pengguna` (Physical Data Model). */
 return new class extends Migration
 {
     public function up(): void
@@ -17,7 +15,7 @@ return new class extends Migration
             $table->string('username', 100)->unique();
             $table->string('email', 100)->unique();
             $table->string('kata_sandi', 255);
-            $table->string('peran', 10); // asisten | dosen | laboran
+            $table->string('peran', 10);
             $table->string('nomor_induk', 30)->nullable();
         });
     }

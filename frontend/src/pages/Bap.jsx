@@ -1,111 +1,139 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import Pesan from '../components/Pesan';
-import Skeleton from '../components/Skeleton';
+import Ikon from '../components/Ikon';
 import logo from '../components/logo/Logo Vertikal Telkom University.png';
 
-const TANPA_PESAN = { jenis: '', teks: '' };
+const IDENTITAS = [
+  ['Nama', 'nama'], ['NIM', 'nim'], ['Prodi', 'prodi'], ['Kode MK', 'kode_mk'],
+  ['Nama MK', 'nama_mk'], ['Bulan', 'bulan'], ['Total Jam', 'total_jam'],
+];
 
-/** UC03 Mengunduh BAP (wireframe Berita Acara Pekerjaan). */
+/* UC03 Mengunduh BAP (wireframe 6). */
 export default function Bap() {
   const [pilihan, setPilihan] = useState(null);
-  const [isian, setIsian] = useState({ id_kelas: '', id_periode_bap: '' });
+  const [idKelas, setIdKelas] = useState('');
+  const [rentang, setRentang] = useState({ tanggal_mulai: '', tanggal_selesai: '' });
   const [bap, setBap] = useState(null);
-  const [pesan, setPesan] = useState(TANPA_PESAN);
+  const [pesan, setPesan] = useState({ jenis: '', teks: '' });
   const [proses, setProses] = useState(false);
 
+  // Basic course langkah 2: pilihan praktikum dan periode BAP (KF-05).
   useEffect(() => {
     api.get('/bap/pilihan').then(setPilihan).catch((e) => setPesan({ jenis: 'galat', teks: e.message }));
   }, []);
 
-  const ubah = (k) => (e) => { setIsian((s) => ({ ...s, [k]: e.target.value })); setBap(null); };
+  function pilihPraktikum(e) {
+    setIdKelas(e.target.value);
+  }
 
+  // Langkah 3–5: susun BAP lalu tampilkan pratinjau (KF-06).
   async function tampilkan(e) {
     e.preventDefault();
-    setPesan(TANPA_PESAN);
     setBap(null);
-    if (!isian.id_kelas || !isian.id_periode_bap) {
-      setPesan({ jenis: 'galat', teks: 'Praktikum dan periode BAP wajib dipilih.' });
+    if (!idKelas || !rentang.tanggal_mulai || !rentang.tanggal_selesai) {
+      setPesan({ jenis: 'galat', teks: !idKelas ? 'Praktikum wajib dipilih.' : 'Tanggal mulai dan selesai wajib diisi.' });
       return;
     }
     setProses(true);
     try {
-      setBap(await api.post('/bap', isian));
+      const r = await api.post('/bap', { id_kelas: idKelas, ...rentang });
+      setBap(r.data);
+      setPesan(r.peringatan ? { jenis: 'info', teks: r.peringatan } : { jenis: '', teks: '' });
     } catch (err) {
-      setPesan({ jenis: 'galat', teks: err.errors?.id_periode_bap?.[0] ?? err.errors?.id_kelas?.[0] ?? err.message });
-    } finally { setProses(false); }
+      setPesan({ jenis: 'galat', teks: err.message });
+    } finally {
+      setProses(false);
+    }
   }
 
+  // Langkah 6–7: unduh PDF (KF-07).
   async function unduh() {
-    try { await api.unduh(`/bap/${bap.id_bap}/unduh`); } catch (err) { setPesan({ jenis: 'galat', teks: err.message }); }
+    try {
+      await api.unduh(`/bap/${bap.id_bap}/tautan`);
+    } catch (err) {
+      setPesan({ jenis: 'galat', teks: err.message });
+    }
   }
 
   return (
     <>
-      <form className="kartu baris-form" onSubmit={tampilkan} noValidate>
+      <form className="kartu" onSubmit={tampilkan} noValidate>
+        <div>
+          <h2>Pilih data BAP</h2>
+          <p className="redup">BAP disusun otomatis dari data presensi pada rentang tanggal yang dipilih (boleh lintas bulan, sesuai batas dari laboran).</p>
+        </div>
+        <div className="baris-form">
         <label className="bidang bidang-lebar">
-          <span>Praktikum (Kelas yang Ditugaskan)</span>
-          <select value={isian.id_kelas} onChange={ubah('id_kelas')}>
-            <option value="">— Pilih praktikum —</option>
-            {pilihan?.praktikum.map((p) => (
-              <option key={p.id_kelas} value={p.id_kelas}>{p.kode_praktikum} · {p.nama_praktikum} ({p.kode_kelas})</option>
-            ))}
+          <span>Praktikum (kelas yang ditugaskan)</span>
+          <select value={idKelas} onChange={pilihPraktikum} disabled={!pilihan?.praktikum.length}>
+            <option value="">{pilihan?.praktikum.length === 0 ? 'Anda belum ditugaskan pada kelas praktikum' : '— Pilih praktikum —'}</option>
+            {pilihan?.praktikum.map((p) => <option key={p.id_kelas} value={p.id_kelas}>{p.label}</option>)}
           </select>
         </label>
-        <label className="bidang bidang-lebar">
-          <span>Periode BAP</span>
-          <select value={isian.id_periode_bap} onChange={ubah('id_periode_bap')}>
-            <option value="">— Pilih periode —</option>
-            {pilihan?.periode_bap.map((p) => <option key={p.id_periode_bap} value={p.id_periode_bap}>{p.nama_periode_bap}</option>)}
-          </select>
+        <label className="bidang">
+          <span>Dari tanggal</span>
+          <input type="date" value={rentang.tanggal_mulai} onChange={(e) => setRentang({ ...rentang, tanggal_mulai: e.target.value })} />
         </label>
-        <button className="tombol tombol-utama" disabled={!pilihan || proses}>{proses ? 'Menyusun…' : 'Tampilkan'}</button>
+        <label className="bidang">
+          <span>Sampai tanggal</span>
+          <input type="date" value={rentang.tanggal_selesai} min={rentang.tanggal_mulai} onChange={(e) => setRentang({ ...rentang, tanggal_selesai: e.target.value })} />
+        </label>
+        <button className="tombol tombol-utama" disabled={proses || !pilihan?.praktikum.length}>
+          {proses ? 'Memproses…' : 'Tampilkan'}
+        </button>
+        </div>
       </form>
 
-      <Pesan jenis={pesan.jenis} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks}</Pesan>
-
-      {!pilihan && pesan.jenis !== 'galat' && <Skeleton baris={3} />}
-      {pilihan?.praktikum.length === 0 && <p className="redup">Anda belum ditugaskan pada kelas praktikum pada periode ini.</p>}
+      <Pesan jenis={pesan.jenis} onTutup={() => setPesan({ jenis: '', teks: '' })}>{pesan.teks}</Pesan>
 
       {bap && (
         <section className="kartu">
-          <div className="baris-judul">
-            <h2>Pratinjau BAP</h2>
-            <button className="tombol" onClick={unduh}>Unduh BAP</button>
+          <div className="kepala-kartu">
+            <div>
+              <h2>Pratinjau BAP</h2>
+              <p className="redup">Periksa isi BAP sebelum diunduh.</p>
+            </div>
+            <button className="tombol tombol-utama" onClick={unduh}><Ikon nama="unduh" ukuran={16} /> Unduh BAP (PDF)</button>
           </div>
+
           <div className="dokumen-bap">
             <div className="dokumen-kepala">
               <div>
                 <strong className="dokumen-judul">BERITA ACARA PEKERJAAN DAN KEHADIRAN<br />ASISTEN PRAKTIKUM</strong>
                 <table className="dokumen-identitas">
                   <tbody>
-                    {[['NAMA', bap.nama], ['NIM', bap.nim], ['BULAN', bap.bulan], ['PRODI', bap.prodi], ['KODE MK', bap.kode_mk],
-                      ['NAMA MK', bap.nama_mk], ['TAHUN', bap.tahun], ['TOTAL JAM', bap.total_jam]].map(([k, v]) => (
-                      <tr key={k}><th>{k}</th><td>: {v}</td></tr>
+                    {IDENTITAS.map(([label, k]) => (
+                      <tr key={k}><th>{label.toUpperCase()}</th><td>: {bap[k] ?? '-'}</td></tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <div className="dokumen-lab">
-                <img className="dokumen-logo" src={logo} alt="Logo Telkom University" /><br />
-                Laboratorium<br />Universitas Telkom Surabaya
+                <img className="dokumen-logo" src={logo} alt="Logo Telkom University" /><br />Laboratorium<br />Universitas Telkom Surabaya
               </div>
             </div>
+
             <div className="tabel-bungkus">
               <table className="tabel tabel-bergaris">
                 <thead>
-                  <tr><th>No</th><th>Hari</th><th>Tanggal</th><th>Kelas</th><th>Jam Masuk</th><th>Jam Keluar</th><th>Jumlah Jam</th><th>Modul Praktikum</th><th>Paraf</th></tr>
+                  <tr>
+                    <th>No</th><th>Hari</th><th>Tanggal</th><th>Kelas</th><th>Jam Masuk</th>
+                    <th>Jam Keluar</th><th>Jumlah Jam</th><th>Modul Praktikum</th><th>Paraf</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {bap.baris.map((b, i) => (
                     <tr key={i}>
-                      <td>{i + 1}</td><td>{b.hari}</td><td>{b.tanggal}</td><td>{b.kelas}</td><td>{b.jam_masuk}</td>
-                      <td>{b.jam_keluar}</td><td>{b.jumlah_jam}</td><td>{b.modul}</td><td />
+                      <td>{i + 1}</td><td>{b.hari}</td><td className="nowrap">{b.tanggal}</td><td>{b.kelas}</td>
+                      <td>{b.jam_masuk}</td><td>{b.jam_keluar}</td><td className="nowrap">{b.jumlah_jam}</td>
+                      <td>{b.modul}</td><td />
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
             <div className="dokumen-ttd">
               Surabaya, {bap.tanggal_dibuat}<br />Koordinator Dosen Mata Kuliah
               <div className="dokumen-ruang-ttd" />

@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Pengguna;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<Pengguna> */
 class PenggunaFactory extends Factory
 {
     protected $model = Pengguna::class;
@@ -22,6 +21,11 @@ class PenggunaFactory extends Factory
         ];
     }
 
+    public function mahasiswa(): static
+    {
+        return $this->state(['peran' => Pengguna::PERAN_MAHASISWA]);
+    }
+
     public function asisten(): static
     {
         return $this->state(['peran' => Pengguna::PERAN_ASISTEN]);
@@ -32,8 +36,8 @@ class PenggunaFactory extends Factory
         return $this->state(['peran' => Pengguna::PERAN_DOSEN, 'nomor_induk' => fake()->numerify('2023####')]);
     }
 
-    public function laboran(): static
+    public function admin(): static
     {
-        return $this->state(['peran' => Pengguna::PERAN_LABORAN, 'nomor_induk' => fake()->numerify('2022####')]);
+        return $this->state(['peran' => Pengguna::PERAN_ADMIN, 'nomor_induk' => null]);
     }
 }

@@ -13,7 +13,7 @@ class Praktikum extends Model
     protected $primaryKey = 'id_praktikum';
     public $timestamps = false;
 
-    protected $fillable = ['id_periode', 'kode_praktikum', 'nama_praktikum', 'prodi'];
+    protected $fillable = ['id_periode', 'kode_praktikum', 'nama_praktikum'];
 
     public function periode(): BelongsTo
     {

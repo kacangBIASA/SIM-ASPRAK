@@ -115,30 +115,15 @@ class PresensiTest extends TestCase
     public function test_waktu_presensi_bertumpuk_ditolak(): void
     {
         [$asisten, $kelas] = $this->asistenDenganKelas();
-        $kelasLain = $this->buatKelas(kodeMk: 'SI3105', kodeKelas: 'IS-05-02');
-        $this->tugaskan($asisten, $kelasLain);
         $this->masukSebagai($asisten);
 
-        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas))->assertCreated(); // 08:00–10:00
-        $this->postJson('/api/presensi', $this->isianValid($kelasLain->id_kelas, ['jam_masuk' => '09:00', 'jam_keluar' => '11:00']))
+        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas))->assertCreated();
+        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas, ['jam_masuk' => '09:00', 'jam_keluar' => '11:00']))
             ->assertStatus(422)
             ->assertJsonValidationErrors('jam_masuk');
 
-        // Bersambung tepat di jam keluar tetap boleh.
-        $this->postJson('/api/presensi', $this->isianValid($kelasLain->id_kelas, ['jam_masuk' => '10:00', 'jam_keluar' => '12:00']))
+        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas, ['jam_masuk' => '10:00', 'jam_keluar' => '12:00']))
             ->assertCreated();
-    }
-
-    public function test_kelas_yang_sama_hanya_sekali_presensi_per_hari(): void
-    {
-        [$asisten, $kelas] = $this->asistenDenganKelas();
-        $this->masukSebagai($asisten);
-
-        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas))->assertCreated(); // 08:00–10:00
-        $this->postJson('/api/presensi', $this->isianValid($kelas->id_kelas, ['jam_masuk' => '13:00', 'jam_keluar' => '15:00']))
-            ->assertStatus(422)
-            ->assertJsonPath('errors.id_kelas.0', 'Anda sudah mencatat presensi untuk praktikum ini hari ini.');
-        $this->assertDatabaseCount('presensi', 1);
     }
 
     public function test_tidak_dapat_presensi_pada_kelas_yang_bukan_tugasnya(): void

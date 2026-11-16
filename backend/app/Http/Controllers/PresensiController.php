@@ -37,6 +37,43 @@ class PresensiController extends Controller
         ]);
     }
 
+    /** Wireframe 5: riwayat presensi asisten pada periode berjalan; dapat dicari menurut praktikum, modul, atau tanggal. */
+    public function riwayat(Request $request): JsonResponse
+    {
+        $periode = Periode::berjalan();
+        $halaman = Presensi::with('kelas.praktikum')
+            ->where('id_asisten', $request->user()->id_pengguna)
+            ->whereHas('kelas.praktikum', fn ($q) => $q->where('id_periode', $periode->id_periode))
+            ->when($this->pola(), fn ($q, $pola) => $q->where(fn ($w) => $w->whereRaw('LOWER(kegiatan) LIKE ?', [$pola])
+                ->orWhereRaw('CAST(tanggal AS VARCHAR) LIKE ?', [$pola])
+                ->orWhereHas('kelas.praktikum', fn ($p) => $p->whereRaw('LOWER(nama_praktikum) LIKE ?', [$pola])->orWhereRaw('LOWER(kode_praktikum) LIKE ?', [$pola]))))
+            ->when($this->urut(Presensi::kolomUrut()), fn ($q, $o) => $q->orderByRaw($o))
+            ->orderByDesc('tanggal')->orderByDesc('jam_masuk')
+            ->paginate($this->perHalaman());
+
+        return response()->json([
+            'data' => $halaman->getCollection()->map(fn (Presensi $p) => [
+                'id_presensi' => $p->id_presensi,
+                'tanggal' => $p->tanggal->toDateString(),
+                'praktikum' => "{$p->kelas->praktikum->kode_praktikum} · {$p->kelas->praktikum->nama_praktikum}",
+                'modul' => $p->kegiatan,
+                'jam_masuk' => substr($p->jam_masuk, 0, 5),
+                'jam_keluar' => substr($p->jam_keluar, 0, 5),
+            ]),
+            'halaman' => $this->halaman($halaman),
+        ]);
+    }
+
+    /** Wireframe 5 (tombol Lihat): foto kegiatan milik asisten sendiri, sebagai data URL agar dapat dipasang di <img> tanpa header token. */
+    public function foto(Request $request, Presensi $presensi): JsonResponse
+    {
+        abort_if((int) $presensi->id_asisten !== (int) $request->user()->id_pengguna, 403, 'Anda tidak memiliki akses ke foto ini.');
+        $url = $presensi->fotoDataUrl();
+        abort_unless($url, 404, 'Foto kegiatan tidak ditemukan.');
+
+        return response()->json(['url' => $url]);
+    }
+
     /** Basic course langkah 3–5, alternate course 4a & 4b (KF-04). */
     public function store(Request $request): JsonResponse
     {
@@ -67,18 +104,6 @@ class PresensiController extends Controller
         $tanggal = now()->toDateString();
         $jamMasuk = $data['jam_masuk'].':00';
         $jamKeluar = $data['jam_keluar'].':00';
-
-        // Satu kelas hanya punya satu jadwal per hari, jadi presensinya maksimal sekali per hari.
-        $sudahPresensi = Presensi::where('id_asisten', $asisten->id_pengguna)
-            ->where('id_kelas', $data['id_kelas'])
-            ->whereDate('tanggal', $tanggal)
-            ->exists();
-
-        if ($sudahPresensi) {
-            throw ValidationException::withMessages([
-                'id_kelas' => 'Anda sudah mencatat presensi untuk praktikum ini hari ini.',
-            ]);
-        }
 
         $bertumpuk = Presensi::where('id_asisten', $asisten->id_pengguna)
             ->whereDate('tanggal', $tanggal)

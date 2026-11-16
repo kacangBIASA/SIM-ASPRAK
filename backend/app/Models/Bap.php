@@ -12,11 +12,11 @@ class Bap extends Model
     protected $primaryKey = 'id_bap';
     public $timestamps = false;
 
-    protected $fillable = ['id_asisten', 'id_kelas', 'id_periode_bap', 'tanggal_dibuat'];
+    protected $fillable = ['id_asisten', 'id_kelas', 'id_periode_bap', 'tanggal_mulai', 'tanggal_selesai', 'tanggal_dibuat'];
 
     protected function casts(): array
     {
-        return ['tanggal_dibuat' => 'date:Y-m-d'];
+        return ['tanggal_dibuat' => 'date:Y-m-d', 'tanggal_mulai' => 'date:Y-m-d', 'tanggal_selesai' => 'date:Y-m-d'];
     }
 
     public function asisten(): BelongsTo

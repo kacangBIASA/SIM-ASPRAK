@@ -13,7 +13,7 @@ class KelasPraktikum extends Model
     protected $primaryKey = 'id_kelas';
     public $timestamps = false;
 
-    protected $fillable = ['id_praktikum', 'id_dosen', 'kode_kelas'];
+    protected $fillable = ['id_praktikum', 'id_dosen', 'kode_kelas', 'prodi'];
 
     public function praktikum(): BelongsTo
     {
@@ -25,7 +25,6 @@ class KelasPraktikum extends Model
         return $this->belongsTo(Pengguna::class, 'id_dosen', 'id_pengguna');
     }
 
-    /** Asisten yang ditetapkan pada kelas ini (tabel penugasan_asisten). */
     public function asisten(): BelongsToMany
     {
         return $this->belongsToMany(Pengguna::class, 'penugasan_asisten', 'id_kelas', 'id_asisten');

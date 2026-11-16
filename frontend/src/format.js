@@ -1,6 +1,5 @@
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-/** "2026-11-04" → "04 November 2026" */
 export function tanggal(iso) {
   if (!iso) return '-';
   const [y, m, d] = iso.split('-').map(Number);
@@ -8,7 +7,8 @@ export function tanggal(iso) {
 }
 
 export const NAMA_PERAN = {
+  mahasiswa: 'Mahasiswa',
   asisten: 'Asisten Praktikum',
   dosen: 'Dosen Pengampu',
-  laboran: 'Laboran',
+  admin: 'Admin',
 };
