@@ -8,6 +8,7 @@ import Ikon from '../components/Ikon';
 import ThUrut from '../components/ThUrut';
 import KotakCari from '../components/KotakCari';
 import Pesan from '../components/Pesan';
+import { BarisSkel, StatSkel } from '../components/Skeleton';
 
 const BULAN = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 const STATUS = { belum: ['Belum dinilai', ''], draft: ['Draft', 'lencana-kuning'], terkirim: ['Terkirim', 'lencana-hijau'] };
@@ -21,7 +22,7 @@ const ISI = {
     tabel: 'Presensi terakhir',
     deskripsi: 'Catatan presensi terbaru milik asisten yang sedang masuk.',
     cari: 'Cari praktikum atau tanggal…',
-    kolom: [['Tanggal', (b) => tanggal(b.tanggal), 'tanggal'], ['Praktikum', (b) => b.praktikum, 'praktikum'], ['Kelas', (b) => b.kelas, 'kelas'], ['Jam masuk', (b) => b.jam_masuk, 'jam_masuk'], ['Jam keluar', (b) => b.jam_keluar, 'jam_keluar']],
+    kolom: [['Tanggal', (b) => tanggal(b.tanggal), 'tanggal'], ['Praktikum', (b) => b.praktikum, 'praktikum'], ['Kelas', (b) => b.kelas, 'kelas'], ['Prodi', (b) => b.prodi, 'prodi'], ['Jam masuk', (b) => b.jam_masuk, 'jam_masuk'], ['Jam keluar', (b) => b.jam_keluar, 'jam_keluar']],
   },
   dosen: {
     statistik: [['Praktikum yang diampu', 'pengguna', 'kelas pada periode aktif'], ['Jumlah asisten', 'sertifikat', 'asisten di semua kelas'], ['Penilaian belum terkirim', 'bintang', 'pada periode ini', true]],
@@ -29,8 +30,8 @@ const ISI = {
     aksi: ['/kelas-praktikum', 'Buka kelas praktikum', 'folder'],
     tabel: 'Praktikum yang diampu',
     deskripsi: 'Kelas praktikum yang diampu pada periode aktif beserta status penilaiannya.',
-    cari: 'Cari praktikum atau kelas…',
-    kolom: [['Kode MK', (b) => b.kode_mk, 'kode_mk'], ['Praktikum', (b) => b.praktikum, 'praktikum'], ['Kelas', (b) => b.kelas, 'kelas'], ['Jumlah asisten', (b) => `${b.jumlah_asisten} asisten`, 'jumlah_asisten'],
+    cari: 'Cari praktikum, kelas, atau prodi…',
+    kolom: [['Kode MK', (b) => b.kode_mk, 'kode_mk'], ['Praktikum', (b) => b.praktikum, 'praktikum'], ['Kelas', (b) => b.kelas, 'kelas'], ['Prodi', (b) => b.prodi, 'prodi'], ['Jumlah asisten', (b) => `${b.jumlah_asisten} asisten`, 'jumlah_asisten'],
       ['Status penilaian', (b) => <span className={`lencana ${STATUS[b.status][1]}`}>{STATUS[b.status][0]}</span>]],
   },
   admin: {
@@ -39,7 +40,7 @@ const ISI = {
     aksi: ['/sertifikat', 'Isi nomor surat', 'sertifikat'],
     tabel: 'Kelas praktikum berjalan',
     deskripsi: 'Seluruh kelas praktikum pada periode aktif.',
-    cari: 'Cari praktikum, kelas, atau dosen…',
+    cari: 'Cari praktikum, kelas, prodi, atau dosen…',
     kolom: [['Kode MK', (b) => b.kode_mk, 'kode_mk'], ['Praktikum', (b) => b.praktikum, 'praktikum'], ['Kelas', (b) => b.kelas, 'kelas'], ['Prodi', (b) => b.prodi, 'prodi'], ['Dosen pengampu', (b) => b.dosen, 'dosen'], ['Jumlah asisten', (b) => `${b.jumlah_asisten} asisten`, 'jumlah_asisten']],
   },
 };
@@ -53,6 +54,7 @@ function BerandaMahasiswa() {
         <h2>Selamat datang, {pengguna.nama.split(' ')[0]}</h2>
         <p>Kamu belum ditugaskan pada kelas praktikum. Setelah dosen pengampu menetapkanmu sebagai asisten, menu Presensi dan BAP akan muncul otomatis.</p>
       </div>
+      <Link to="/bantuan" className="tombol"><Ikon nama="obrolan" />Buka bantuan</Link>
     </div>
   );
 }
@@ -67,7 +69,7 @@ function BerandaPeran() {
   const isi = ISI[pengguna.peran];
   const [praktikum, setPraktikum] = useState('');
   const [prodi, setProdi] = useState('');
-  const { data, galat, cari, paging, urut } = useDaftar('/beranda', pengguna.peran === 'admin' ? { praktikum, prodi } : {});
+  const { data, error, cari, paging, urut } = useDaftar('/beranda', pengguna.peran === 'admin' ? { praktikum, prodi } : {});
   const filter = [['Praktikum', praktikum, setPraktikum, data?.praktikum_opsi, 'Semua praktikum'], ['Prodi', prodi, setProdi, data?.prodi_opsi, 'Semua prodi']];
 
   return (
@@ -80,14 +82,14 @@ function BerandaPeran() {
         <Link to={isi.aksi[0]} className="tombol"><Ikon nama={isi.aksi[2]} />{isi.aksi[1]}</Link>
       </div>
 
-      <Pesan jenis="galat">{galat}</Pesan>
+      <Pesan jenis="error">{error}</Pesan>
 
       <div className="ringkasan-kartu">
         {isi.statistik.map(([s, ikon, ket, kuning], i) => (
           <div key={s} className={`kartu statistik ${kuning ? 'kuning' : ''}`}>
             <div>
               <small>{s}</small>
-              <strong>{data ? data.statistik[i] : '…'}</strong>
+              <strong>{data ? data.statistik[i] : <StatSkel />}</strong>
               <span className="keterangan">{ket}</span>
             </div>
             <span className="ikon-statistik"><Ikon nama={ikon} ukuran={22} /></span>
@@ -116,6 +118,7 @@ function BerandaPeran() {
               <tr><th>No</th>{isi.kolom.map(([k, , u]) => (u ? <ThUrut key={k} k={u} {...urut}>{k}</ThUrut> : <th key={k}>{k}</th>))}</tr>
             </thead>
             <tbody>
+                {!data && !error && <BarisSkel kolom={isi.kolom.length + 1} />}
               {data?.baris.length === 0 && (
                 <tr><td colSpan={isi.kolom.length + 1} className="redup">Belum ada data.</td></tr>
               )}

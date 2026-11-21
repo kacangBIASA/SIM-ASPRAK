@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth';
+import Ikon from '../components/Ikon';
 import Pesan from '../components/Pesan';
 import logo from '../components/logo/Logo Vertikal Telkom University.png';
 
@@ -8,7 +9,8 @@ export default function Login() {
   const { masuk } = useAuth();
   const [email, setEmail] = useState('');
   const [kataSandi, setKataSandi] = useState('');
-  const [galat, setGalat] = useState({});
+  const [intip, setIntip] = useState(false);
+  const [error, setError] = useState({});
   const [pesan, setPesan] = useState('');
   const [proses, setProses] = useState(false);
 
@@ -19,7 +21,7 @@ export default function Login() {
     const g = {};
     if (!email.trim()) g.login = 'Email atau username wajib diisi.';
     if (!kataSandi) g.kata_sandi = 'Kata sandi wajib diisi.';
-    setGalat(g);
+    setError(g);
     if (Object.keys(g).length) return;
 
     setProses(true);
@@ -29,7 +31,7 @@ export default function Login() {
       if (err.status === 422 && err.errors?.login?.[0] === 'Email atau username atau kata sandi salah.') {
         setPesan(err.errors.login[0]);
       } else if (err.errors && Object.keys(err.errors).length) {
-        setGalat(Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v[0]])));
+        setError(Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v[0]])));
       } else {
         setPesan(err.message);
       }
@@ -47,20 +49,26 @@ export default function Login() {
             <h1>Masuk ke Sistem</h1>
             <p>Sistem Informasi Manajemen Asisten Praktikum <br/> Laboratorium Telkom University Surabaya</p>
           </div>
-          <Pesan jenis="galat">{pesan}</Pesan>
+          <Pesan jenis="error">{pesan}</Pesan>
 
           <label className="bidang">
             <span>Email atau Username</span>
             <input type="text" value={email} autoComplete="username" autoFocus
-              onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(galat.login)} />
-            {galat.login && <small className="galat">{galat.login}</small>}
+              onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(error.login)} />
+            {error.login && <small className="error">{error.login}</small>}
           </label>
 
           <label className="bidang">
             <span>Kata sandi</span>
-            <input type="password" value={kataSandi} autoComplete="current-password"
-              onChange={(e) => setKataSandi(e.target.value)} aria-invalid={Boolean(galat.kata_sandi)} />
-            {galat.kata_sandi && <small className="galat">{galat.kata_sandi}</small>}
+            <span className="input-sandi">
+              <input type={intip ? 'text' : 'password'} value={kataSandi} autoComplete="current-password"
+                onChange={(e) => setKataSandi(e.target.value)} aria-invalid={Boolean(error.kata_sandi)} />
+              <button type="button" className="intip-sandi" onClick={() => setIntip((v) => !v)}
+                aria-label={intip ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'} aria-pressed={intip}>
+                <Ikon nama={intip ? 'mataTutup' : 'mata'} />
+              </button>
+            </span>
+            {error.kata_sandi && <small className="error">{error.kata_sandi}</small>}
           </label>
 
           <button className="tombol tombol-utama tombol-penuh" disabled={proses}>

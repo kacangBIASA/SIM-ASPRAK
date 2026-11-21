@@ -16,7 +16,7 @@ class Periode extends Model
     protected $primaryKey = 'id_periode';
     public $timestamps = false;
 
-    protected $fillable = ['nama_periode', 'tanggal_mulai', 'tanggal_selesai', 'nomor_surat', 'path_tanda_tangan', 'path_stempel', 'nama_penandatangan', 'nip_penandatangan'];
+    protected $fillable = ['nama_periode', 'tanggal_mulai', 'tanggal_selesai', 'nomor_surat', 'path_tanda_tangan', 'path_stempel', 'nama_penandatangan', 'nip_penandatangan', 'stempel_x', 'stempel_y', 'stempel_ukuran', 'ttd_ukuran'];
 
     protected function casts(): array
     {

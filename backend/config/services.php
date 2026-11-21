@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // KF-19: penanda tangan sertifikat.
+    'sertifikat' => [
+        'kota' => env('SERTIFIKAT_KOTA', 'Surabaya'),
+        'jabatan' => env('SERTIFIKAT_JABATAN', 'Direktur Universitas Telkom Kampus Surabaya'),
+        'nama' => env('SERTIFIKAT_NAMA', 'DR. MOHAMMAD YANUAR HARIYAWAN, S.T., M.T.'),
+        'nip' => env('SERTIFIKAT_NIP', '25760006'),
+    ],
+
 ];

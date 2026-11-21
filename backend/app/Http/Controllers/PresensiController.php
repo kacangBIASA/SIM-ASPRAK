@@ -56,6 +56,7 @@ class PresensiController extends Controller
                 'id_presensi' => $p->id_presensi,
                 'tanggal' => $p->tanggal->toDateString(),
                 'praktikum' => "{$p->kelas->praktikum->kode_praktikum} · {$p->kelas->praktikum->nama_praktikum}",
+                'prodi' => $p->kelas->prodi,
                 'modul' => $p->kegiatan,
                 'jam_masuk' => substr($p->jam_masuk, 0, 5),
                 'jam_keluar' => substr($p->jam_keluar, 0, 5),
@@ -97,6 +98,8 @@ class PresensiController extends Controller
             'jam_keluar.after' => 'Jam keluar harus lebih akhir dari jam masuk.',
             'foto_kegiatan.required' => 'Foto kegiatan wajib diunggah.',
             'foto_kegiatan.file' => 'Foto kegiatan gagal diunggah.',
+            // Berkas di atas upload_max_filesize PHP ditolak sebelum aturan max berjalan, lalu jatuh ke aturan uploaded.
+            'foto_kegiatan.uploaded' => 'Foto kegiatan gagal diunggah. Ukuran foto maksimal 2 MB.',
             'foto_kegiatan.mimes' => 'Format foto harus JPG atau PNG.',
             'foto_kegiatan.max' => 'Ukuran foto maksimal 2 MB.',
         ]);

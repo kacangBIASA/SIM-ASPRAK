@@ -7,17 +7,18 @@ import ThUrut from '../components/ThUrut';
 import Halaman from '../components/Halaman';
 import KotakCari from '../components/KotakCari';
 import Pesan from '../components/Pesan';
+import { BarisSkel, Skel } from '../components/Skeleton';
 
 const KOSONG = { kode_praktikum: '', kode_kelas: '', nama_praktikum: '', prodi: '' };
 const TANPA_PESAN = { jenis: '', teks: '' };
-const galatDari = (err) => Object.fromEntries(Object.entries(err.errors ?? {}).map(([k, v]) => [k, v[0]]));
+const errorDari = (err) => Object.fromEntries(Object.entries(err.errors ?? {}).map(([k, v]) => [k, v[0]]));
 
 /* UC05 Mendaftarkan kelas praktikum & UC06 Menetapkan asisten (wireframe 7–9). */
 export default function KelasPraktikum() {
   const [tampilan, setTampilan] = useState('daftar');
   const [pesan, setPesan] = useState(TANPA_PESAN);
   const [periode, setPeriode] = useState('');
-  const { data: daftar, galat, muat, cari, paging, urut } = useDaftar('/kelas-praktikum', { periode });
+  const { data: daftar, error, muat, cari, paging, urut } = useDaftar('/kelas-praktikum', { periode });
 
   const kembali = (p = TANPA_PESAN) => { setPesan(p); setTampilan('daftar'); muat(); };
 
@@ -26,13 +27,13 @@ export default function KelasPraktikum() {
 
   return (
     <>
-      <Pesan jenis={pesan.jenis} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks || galat}</Pesan>
+      <Pesan jenis={pesan.jenis} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks || error}</Pesan>
 
       <section className="kartu">
         <h2>Kelas praktikum yang diampu</h2>
         <p className="redup">Daftarkan kelas baru atau kelola asisten pada kelas yang sudah ada.</p>
         <div className="alat-tabel">
-          <KotakCari {...cari} placeholder="Cari kode, mata kuliah, atau kelas…" />
+          <KotakCari {...cari} placeholder="Cari kode, mata kuliah, kelas, atau prodi…" />
           {daftar?.periode_opsi.length > 1 && (
             <label className="bidang">
               <span>Periode</span>
@@ -44,17 +45,18 @@ export default function KelasPraktikum() {
           <button className="tombol tombol-utama" onClick={() => { setPesan(TANPA_PESAN); setTampilan('tambah'); }} disabled={!daftar}><Ikon nama="tambah" />Tambah kelas</button>
         </div>
         {daftar?.data.length === 0 && !cari.nilai && <p className="redup">Belum ada kelas praktikum pada periode ini. Pilih Tambah Kelas untuk mendaftarkan kelas.</p>}
-        {daftar && (daftar.data.length > 0 || cari.nilai) && (
+        {(!daftar || daftar.data.length > 0 || cari.nilai) && (
           <div className="tabel-bungkus">
             <table className="tabel">
               <thead>
-                <tr><th>No</th><ThUrut k="kode_mk" {...urut}>Kode MK</ThUrut><ThUrut k="mata_kuliah" {...urut}>Mata Kuliah</ThUrut><ThUrut k="kelas" {...urut}>Kelas</ThUrut><ThUrut k="jumlah_asisten" {...urut}>Jumlah Asisten</ThUrut><th>Aksi</th></tr>
+                <tr><th>No</th><ThUrut k="kode_mk" {...urut}>Kode MK</ThUrut><ThUrut k="mata_kuliah" {...urut}>Mata Kuliah</ThUrut><ThUrut k="prodi" {...urut}>Prodi</ThUrut><ThUrut k="kelas" {...urut}>Kelas</ThUrut><ThUrut k="jumlah_asisten" {...urut}>Jumlah Asisten</ThUrut><th>Aksi</th></tr>
               </thead>
               <tbody>
-                {daftar.data.length === 0 && <tr><td colSpan={6} className="redup">Tidak ada kelas yang cocok.</td></tr>}
-                {daftar.data.map((k, i) => (
+                {!daftar && !error && <BarisSkel kolom={7} />}
+                {daftar?.data.length === 0 && <tr><td colSpan={7} className="redup">Tidak ada kelas yang cocok.</td></tr>}
+                {daftar?.data.map((k, i) => (
                   <tr key={k.id_kelas}>
-                    <td>{daftar.halaman.dari + i}</td><td>{k.kode_praktikum}</td><td><b>{k.nama_praktikum}</b></td><td>{k.kode_kelas}</td>
+                    <td>{daftar.halaman.dari + i}</td><td>{k.kode_praktikum}</td><td><b>{k.nama_praktikum}</b></td><td>{k.prodi}</td><td>{k.kode_kelas}</td>
                     <td>{k.jumlah_asisten}</td>
                     <td>
                       <button className="tombol tombol-kecil" onClick={() => { setPesan(TANPA_PESAN); setTampilan(k.id_kelas); }}>
@@ -77,7 +79,7 @@ export default function KelasPraktikum() {
 function FormKelas({ daftar, onBatal, onTersimpan }) {
   useSubJudul('Tambah Kelas');
   const [isian, setIsian] = useState(KOSONG);
-  const [galat, setGalat] = useState({});
+  const [error, setError] = useState({});
   const [pesan, setPesan] = useState(TANPA_PESAN);
   const [proses, setProses] = useState(false);
 
@@ -90,52 +92,61 @@ function FormKelas({ daftar, onBatal, onTersimpan }) {
     if (!isian.kode_kelas.trim()) g.kode_kelas = 'Kode kelas wajib diisi.';
     if (!isian.nama_praktikum.trim()) g.nama_praktikum = 'Nama mata kuliah wajib diisi.';
     if (!isian.prodi) g.prodi = 'Prodi wajib dipilih.';
-    setGalat(g);
-    if (Object.keys(g).length) { setPesan({ jenis: 'galat', teks: 'Isian wajib diisi.' }); return; }
+    setError(g);
+    if (Object.keys(g).length) { setPesan({ jenis: 'error', teks: 'Isian wajib diisi.' }); return; }
 
     setProses(true);
     try {
       const r = await api.post('/kelas-praktikum', { ...isian, periode: daftar.id_periode });
       onTersimpan({ jenis: 'sukses', teks: r.message });
     } catch (err) {
-      setGalat(galatDari(err));
-      setPesan({ jenis: 'galat', teks: err.errors?.kode_kelas?.[0] ?? (err.status === 422 ? 'Periksa kembali isian Anda.' : err.message) });
+      setError(errorDari(err));
+      setPesan({ jenis: 'error', teks: err.errors?.kode_kelas?.[0] ?? (err.status === 422 ? 'Periksa kembali isian Anda.' : err.message) });
       setProses(false);
     }
   }
 
-  const bidang = (k, label, input) => (
+  const bidang = (k, label, input, petunjuk, wajib = true) => (
     <label className="bidang">
-      <span>{label}</span>
+      <span>{label}{wajib && <i className="wajib" aria-hidden="true"> *</i>}</span>
       {input}
-      {galat[k] && <small className="galat">{galat[k]}</small>}
+      {error[k] ? <small className="error">{error[k]}</small> : petunjuk && <small className="petunjuk">{petunjuk}</small>}
     </label>
   );
-  const teks = (k, max) => <input value={isian[k]} maxLength={max} onChange={ubah(k)} aria-invalid={Boolean(galat[k])} />;
+  const teks = (k, max) => <input value={isian[k]} maxLength={max} onChange={ubah(k)} aria-invalid={Boolean(error[k])} />;
 
   return (
     <>
       <Pesan jenis={pesan.jenis || 'info'} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks || 'Satu kelas hanya dapat didaftarkan satu kali pada periode yang dipilih.'}</Pesan>
-      <form className="kartu form-presensi" onSubmit={simpan} noValidate>
+      <form className="kartu form-lebar" onSubmit={simpan} noValidate>
         <div>
           <h2>Form pendaftaran kelas praktikum</h2>
-          <p className="redup">Lengkapi data kelas yang akan kamu ampu.</p>
+          <p className="redup">Lengkapi data kelas yang akan kamu ampu. Isian bertanda <i className="wajib">*</i> wajib diisi.</p>
         </div>
-        <div className="grid-2">
-          {bidang('kode_praktikum', 'Kode mata kuliah', teks('kode_praktikum', 20))}
-          {bidang('kode_kelas', 'Kode kelas', teks('kode_kelas', 20))}
-        </div>
-        {bidang('nama_praktikum', 'Nama mata kuliah', teks('nama_praktikum', 100))}
-        <div className="grid-2">
-          {bidang('prodi', 'Prodi', (
-            <select value={isian.prodi} onChange={ubah('prodi')} aria-invalid={Boolean(galat.prodi)}>
-              <option value="">— Pilih prodi —</option>
-              {daftar?.prodi.map((p) => <option key={p}>{p}</option>)}
-            </select>
-          ))}
-          {bidang('periode', 'Periode', <input value={daftar?.periode ?? ''} readOnly />)}
-        </div>
-        <small className="redup">Jika kode mata kuliah sudah terdaftar pada periode ini, kelas digabungkan ke mata kuliah tersebut.</small>
+
+        <fieldset className="bagian-form">
+          <legend>Mata kuliah</legend>
+          <div className="grid-nama">
+            {bidang('nama_praktikum', 'Nama mata kuliah', teks('nama_praktikum', 100), 'Nama lengkap mata kuliah praktikum.')}
+            {bidang('kode_praktikum', 'Kode mata kuliah', teks('kode_praktikum', 20), 'Maksimal 20 karakter.')}
+          </div>
+        </fieldset>
+
+        <fieldset className="bagian-form">
+          <legend>Kelas</legend>
+          <div className="grid-3">
+            {bidang('kode_kelas', 'Kode kelas', teks('kode_kelas', 20), 'Contoh: IS-05-01.')}
+            {bidang('prodi', 'Prodi', (
+              <select value={isian.prodi} onChange={ubah('prodi')} aria-invalid={Boolean(error.prodi)}>
+                <option value="">— Pilih prodi —</option>
+                {daftar?.prodi.map((p) => <option key={p}>{p}</option>)}
+              </select>
+            ), 'Prodi tempat kelas ini diselenggarakan.')}
+            {bidang('periode', 'Periode', <input value={daftar?.periode ?? ''} readOnly />, 'Terisi otomatis.', false)}
+          </div>
+        </fieldset>
+
+        <p className="catatan-info"><Ikon nama="info" ukuran={16} />Jika kode mata kuliah sudah terdaftar pada periode ini, kelas digabungkan ke mata kuliah tersebut.</p>
         <div className="aksi aksi-garis">
           <button type="button" className="tombol" onClick={onBatal}>Batal</button>
           <button className="tombol tombol-utama" disabled={proses}>{proses ? 'Menyimpan…' : 'Simpan kelas'}</button>
@@ -148,7 +159,7 @@ function FormKelas({ daftar, onBatal, onTersimpan }) {
 /* UC06 langkah 3–8 (wireframe 9). */
 function KelolaAsisten({ idKelas, onKembali }) {
   useSubJudul('Kelola Asisten');
-  const { data, galat, muat, cari, paging, urut } = useDaftar(`/kelas-praktikum/${idKelas}`);
+  const { data, error, muat, cari, paging, urut } = useDaftar(`/kelas-praktikum/${idKelas}`);
   const kelas = data?.data;
   const [cariBaru, setCariBaru] = useState('');
   const [hasil, setHasil] = useState([]);
@@ -169,7 +180,7 @@ function KelolaAsisten({ idKelas, onKembali }) {
   }, [kata]);
 
   async function simpan() {
-    if (!dipilih) { setPesan({ jenis: 'galat', teks: 'Pilih asisten terlebih dahulu.' }); return; }
+    if (!dipilih) { setPesan({ jenis: 'error', teks: 'Pilih asisten terlebih dahulu.' }); return; }
     setProses(true);
     try {
       const r = await api.post(`/kelas-praktikum/${idKelas}/asisten`, { id_asisten: dipilih });
@@ -179,7 +190,7 @@ function KelolaAsisten({ idKelas, onKembali }) {
       setCariBaru('');
       muat();
     } catch (err) {
-      setPesan({ jenis: 'galat', teks: err.errors?.id_asisten?.[0] ?? err.message });
+      setPesan({ jenis: 'error', teks: err.errors?.id_asisten?.[0] ?? err.message });
     } finally {
       setProses(false);
     }
@@ -188,33 +199,37 @@ function KelolaAsisten({ idKelas, onKembali }) {
   return (
     <>
       <div className="kartu kartu-info">
-        {[['Kode MK', kelas?.kode_praktikum], ['Mata kuliah', kelas?.nama_praktikum], ['Kelas', kelas?.kode_kelas], ['Periode', kelas?.periode]]
+        {[['Kode MK', kelas?.kode_praktikum], ['Mata kuliah', kelas?.nama_praktikum], ['Prodi', kelas?.prodi], ['Kelas', kelas?.kode_kelas], ['Periode', kelas?.periode]]
           .map(([label, nilai]) => (
             <div key={label}>
               <small className="label-kecil">{label}</small>
-              <strong>{nilai ?? '…'}</strong>
+              <strong>{nilai ?? <Skel l={90} t={16} />}</strong>
             </div>
           ))}
       </div>
 
-      <Pesan jenis={pesan.jenis} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks || galat}</Pesan>
+      <Pesan jenis={pesan.jenis} onTutup={() => setPesan(TANPA_PESAN)}>{pesan.teks || error}</Pesan>
 
-      <div className="grid-2 rata-atas">
+      <div className="grid-2 rata-atas dua-kartu-tinggi">
         <section className="kartu">
           <h2>Asisten pada kelas ini</h2>
           <p className="redup">Asisten yang sudah ditetapkan pada kelas.</p>
           <div className="alat-tabel"><KotakCari {...cari} placeholder="Cari NIM atau nama…" /></div>
+          {kelas?.asisten.length === 0 ? (
+            <div className="kosong-tengah">{cari.nilai ? 'Tidak ada asisten yang cocok.' : 'Belum ada asisten pada kelas ini.'}</div>
+          ) : (
           <div className="tabel-bungkus">
             <table className="tabel">
               <thead><tr><th>No</th><ThUrut k="nim" {...urut}>NIM</ThUrut><ThUrut k="nama" {...urut}>Nama Asisten</ThUrut></tr></thead>
               <tbody>
-                {kelas?.asisten.length === 0 && <tr><td colSpan={3} className="redup">{cari.nilai ? 'Tidak ada asisten yang cocok.' : 'Belum ada asisten pada kelas ini.'}</td></tr>}
+                {!kelas && !error && <BarisSkel kolom={3} />}
                 {kelas?.asisten.map((a, i) => (
                   <tr key={a.id_pengguna}><td>{kelas.halaman.dari + i}</td><td>{a.nomor_induk}</td><td><b>{a.nama}</b></td></tr>
                 ))}
               </tbody>
             </table>
           </div>
+          )}
           <Halaman {...paging} halaman={kelas?.halaman} />
         </section>
 
@@ -222,11 +237,13 @@ function KelolaAsisten({ idKelas, onKembali }) {
           <h2>Tambah asisten</h2>
           <p className="redup">Cari mahasiswa, lalu pilih untuk ditetapkan ke kelas.</p>
           <div className="alat-tabel"><KotakCari nilai={cariBaru} onUbah={setCariBaru} placeholder="Cari NIM atau nama mahasiswa…" /></div>
+          {hasil.length === 0 ? (
+            <div className="kosong-tengah">{kata ? 'Tidak ada hasil.' : 'Ketik NIM atau nama untuk mencari.'}</div>
+          ) : (
           <div className="tabel-bungkus">
             <table className="tabel">
               <thead><tr><th>NIM</th><th>Nama Mahasiswa</th><th>Pilih</th></tr></thead>
               <tbody>
-                {hasil.length === 0 && <tr><td colSpan={3} className="redup">{kata ? 'Tidak ada hasil.' : 'Ketik NIM atau nama untuk mencari.'}</td></tr>}
                 {hasil.map((a) => (
                   <tr key={a.id_pengguna}>
                     <td>{a.nomor_induk}</td><td><b>{a.nama}</b></td>
@@ -242,8 +259,9 @@ function KelolaAsisten({ idKelas, onKembali }) {
               </tbody>
             </table>
           </div>
-          {hasil.length > 0 && <p className="redup" style={{ marginTop: '.9rem' }}>Menampilkan {hasil.length} data (maksimal 20 hasil teratas)</p>}
-          <div className="aksi aksi-garis" style={{ marginTop: '.9rem' }}>
+          )}
+          {hasil.length > 0 && <p className="redup catatan-hasil">Menampilkan {hasil.length} data (maksimal 20 hasil teratas)</p>}
+          <div className="aksi aksi-garis">
             <button type="button" className="tombol" onClick={onKembali}>Batal</button>
             <button type="button" className="tombol tombol-utama" onClick={simpan} disabled={proses}>{proses ? 'Menyimpan…' : 'Simpan penetapan'}</button>
           </div>

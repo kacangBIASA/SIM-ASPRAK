@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import Pesan from '../components/Pesan';
 import Ikon from '../components/Ikon';
+import { Skel } from '../components/Skeleton';
 import logo from '../components/logo/Logo Vertikal Telkom University.png';
 
 const IDENTITAS = [
@@ -20,7 +21,7 @@ export default function Bap() {
 
   // Basic course langkah 2: pilihan praktikum dan periode BAP (KF-05).
   useEffect(() => {
-    api.get('/bap/pilihan').then(setPilihan).catch((e) => setPesan({ jenis: 'galat', teks: e.message }));
+    api.get('/bap/pilihan').then(setPilihan).catch((e) => setPesan({ jenis: 'error', teks: e.message }));
   }, []);
 
   function pilihPraktikum(e) {
@@ -32,7 +33,7 @@ export default function Bap() {
     e.preventDefault();
     setBap(null);
     if (!idKelas || !rentang.tanggal_mulai || !rentang.tanggal_selesai) {
-      setPesan({ jenis: 'galat', teks: !idKelas ? 'Praktikum wajib dipilih.' : 'Tanggal mulai dan selesai wajib diisi.' });
+      setPesan({ jenis: 'error', teks: !idKelas ? 'Praktikum wajib dipilih.' : 'Tanggal mulai dan selesai wajib diisi.' });
       return;
     }
     setProses(true);
@@ -41,7 +42,7 @@ export default function Bap() {
       setBap(r.data);
       setPesan(r.peringatan ? { jenis: 'info', teks: r.peringatan } : { jenis: '', teks: '' });
     } catch (err) {
-      setPesan({ jenis: 'galat', teks: err.message });
+      setPesan({ jenis: 'error', teks: err.message });
     } finally {
       setProses(false);
     }
@@ -52,7 +53,7 @@ export default function Bap() {
     try {
       await api.unduh(`/bap/${bap.id_bap}/tautan`);
     } catch (err) {
-      setPesan({ jenis: 'galat', teks: err.message });
+      setPesan({ jenis: 'error', teks: err.message });
     }
   }
 
@@ -66,10 +67,10 @@ export default function Bap() {
         <div className="baris-form">
         <label className="bidang bidang-lebar">
           <span>Praktikum (kelas yang ditugaskan)</span>
-          <select value={idKelas} onChange={pilihPraktikum} disabled={!pilihan?.praktikum.length}>
+          {!pilihan && !pesan.teks ? <Skel t={44} kelas="skel-kotak" /> : <select value={idKelas} onChange={pilihPraktikum} disabled={!pilihan?.praktikum.length}>
             <option value="">{pilihan?.praktikum.length === 0 ? 'Anda belum ditugaskan pada kelas praktikum' : '— Pilih praktikum —'}</option>
             {pilihan?.praktikum.map((p) => <option key={p.id_kelas} value={p.id_kelas}>{p.label}</option>)}
-          </select>
+          </select>}
         </label>
         <label className="bidang">
           <span>Dari tanggal</span>

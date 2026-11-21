@@ -10,12 +10,12 @@ export function useTunda(nilai, ms = 300) {
   return tunda;
 }
 
-export function useDaftar(path, extra = {}) {
+export function useDaftar(path, extra = {}, perAwal = 10) {
   const [page, setPage] = useState(1);
-  const [per, setPerState] = useState(10);
+  const [per, setPerState] = useState(perAwal);
   const [cari, setCariState] = useState('');
   const [data, setData] = useState(null);
-  const [galat, setGalat] = useState('');
+  const [error, setError] = useState('');
   const [versi, setVersi] = useState(0);
   const [urutan, setUrutan] = useState({ urut: '', arah: 'asc' });
   const q = useTunda(cari);
@@ -27,8 +27,8 @@ export function useDaftar(path, extra = {}) {
     if (!path) return undefined;
     let batal = false;
     api.get(`${path}?${kunci}`)
-      .then((d) => { if (!batal) { setData(d); setGalat(''); } })
-      .catch((e) => { if (!batal) setGalat(e.message); });
+      .then((d) => { if (!batal) { setData(d); setError(''); } })
+      .catch((e) => { if (!batal) setError(e.message); });
     return () => { batal = true; };
   }, [path, kunci, versi]);
 
@@ -36,7 +36,7 @@ export function useDaftar(path, extra = {}) {
     data,
     setData,
     kunci,
-    galat,
+    error,
     muat: () => setVersi((v) => v + 1),
     cari: { nilai: cari, onUbah: setCariState },
     urut: {

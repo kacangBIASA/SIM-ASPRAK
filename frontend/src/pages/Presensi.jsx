@@ -8,6 +8,7 @@ import Ikon from '../components/Ikon';
 import ThUrut from '../components/ThUrut';
 import KotakCari from '../components/KotakCari';
 import Pesan from '../components/Pesan';
+import { BarisSkel, FormPresensiSkel } from '../components/Skeleton';
 
 const TIPE_FOTO = ['image/jpeg', 'image/png'];
 const KOSONG = { id_kelas: '', kegiatan: '', jam_masuk: '', jam_keluar: '' };
@@ -21,7 +22,7 @@ export default function Presensi() {
   const [isian, setIsian] = useState(KOSONG);
   const [foto, setFoto] = useState(null);
   const [pratinjau, setPratinjau] = useState('');
-  const [galat, setGalat] = useState({});
+  const [error, setError] = useState({});
   const [pesan, setPesan] = useState({ jenis: '', teks: '' });
   const [proses, setProses] = useState(false);
   const [seret, setSeret] = useState(false);
@@ -30,7 +31,7 @@ export default function Presensi() {
   const riwayat = useDaftar('/presensi/riwayat');
 
   useEffect(() => {
-    api.get('/presensi/form').then(setForm).catch((e) => setPesan({ jenis: 'galat', teks: e.message }));
+    api.get('/presensi/form').then(setForm).catch((e) => setPesan({ jenis: 'error', teks: e.message }));
   }, []);
 
   useEffect(() => () => pratinjau && URL.revokeObjectURL(pratinjau), [pratinjau]);
@@ -49,7 +50,7 @@ export default function Presensi() {
     setIsian(KOSONG);
     setFoto(null);
     setPratinjau('');
-    setGalat({});
+    setError({});
     setPesan({ jenis: '', teks: '' });
     inputFoto.current.value = '';
   }
@@ -58,7 +59,7 @@ export default function Presensi() {
     try {
       setLihat({ tanggal: r.tanggal, url: (await api.get(`/presensi/${r.id_presensi}/foto`)).url });
     } catch (err) {
-      setPesan({ jenis: 'galat', teks: err.message });
+      setPesan({ jenis: 'error', teks: err.message });
     }
   }
 
@@ -83,9 +84,9 @@ export default function Presensi() {
     e.preventDefault();
     setPesan({ jenis: '', teks: '' });
     const g = validasi();
-    setGalat(g);
+    setError(g);
     if (Object.keys(g).length) {
-      setPesan({ jenis: 'galat', teks: 'Periksa kembali isian Anda.' });
+      setPesan({ jenis: 'error', teks: 'Periksa kembali isian Anda.' });
       return;
     }
 
@@ -100,8 +101,8 @@ export default function Presensi() {
       setPesan({ jenis: 'sukses', teks: r.message });
       riwayat.muat();
     } catch (err) {
-      setGalat(Object.fromEntries(Object.entries(err.errors ?? {}).map(([k, v]) => [k, v[0]])));
-      setPesan({ jenis: 'galat', teks: err.status === 422 ? 'Periksa kembali isian Anda.' : err.message });
+      setError(Object.fromEntries(Object.entries(err.errors ?? {}).map(([k, v]) => [k, v[0]])));
+      setPesan({ jenis: 'error', teks: err.status === 422 ? 'Periksa kembali isian Anda.' : err.message });
     } finally {
       setProses(false);
     }
@@ -111,7 +112,7 @@ export default function Presensi() {
     <label className="bidang">
       <span>{label}</span>
       {input}
-      {galat[k] && <small className="galat">{galat[k]}</small>}
+      {error[k] && <small className="error">{error[k]}</small>}
     </label>
   );
 
@@ -119,6 +120,7 @@ export default function Presensi() {
     <>
       <Pesan jenis={pesan.jenis} onTutup={() => setPesan({ jenis: '', teks: '' })}>{pesan.teks}</Pesan>
 
+      {!form && !pesan.teks && <FormPresensiSkel />}
       {form && (
         <form className="kartu" onSubmit={simpan} noValidate>
           <div>
@@ -138,7 +140,7 @@ export default function Presensi() {
                   </div>
                   <div className="grid-2">
                     {bidang('id_kelas', 'Praktikum', (
-                      <select value={isian.id_kelas} onChange={ubah('id_kelas')} aria-invalid={Boolean(galat.id_kelas)}>
+                      <select value={isian.id_kelas} onChange={ubah('id_kelas')} aria-invalid={Boolean(error.id_kelas)}>
                         <option value="">— Pilih praktikum —</option>
                         {form.praktikum.map((p) => (
                           <option key={p.id_kelas} value={p.id_kelas}>{p.kode_praktikum} · {p.nama_praktikum}</option>
@@ -149,23 +151,23 @@ export default function Presensi() {
                   </div>
                   {bidang('kegiatan', 'Modul praktikum', (
                     <input value={isian.kegiatan} maxLength={150} onChange={ubah('kegiatan')} placeholder="Contoh: Modul 3"
-                      aria-invalid={Boolean(galat.kegiatan)} />
+                      aria-invalid={Boolean(error.kegiatan)} />
                   ))}
                   <div className="grid-2">
                     {bidang('jam_masuk', 'Jam masuk', (
                       <input inputMode="numeric" placeholder="Contoh: 13:30" maxLength={5} value={isian.jam_masuk}
-                        onChange={ubahJam('jam_masuk')} aria-invalid={Boolean(galat.jam_masuk)} />
+                        onChange={ubahJam('jam_masuk')} aria-invalid={Boolean(error.jam_masuk)} />
                     ))}
                     {bidang('jam_keluar', 'Jam keluar', (
                       <input inputMode="numeric" placeholder="Contoh: 16:30" maxLength={5} value={isian.jam_keluar}
-                        onChange={ubahJam('jam_keluar')} aria-invalid={Boolean(galat.jam_keluar)} />
+                        onChange={ubahJam('jam_keluar')} aria-invalid={Boolean(error.jam_keluar)} />
                     ))}
                   </div>
                 </div>
 
                 <div className="bidang">
                   <span>Foto kegiatan</span>
-                  <div className={`area-foto area-foto-tinggi ${galat.foto_kegiatan ? 'tidak-valid' : ''} ${seret ? 'seret' : ''}`}
+                  <div className={`area-foto area-foto-tinggi ${error.foto_kegiatan ? 'tidak-valid' : ''} ${seret ? 'seret' : ''}`}
                     onDragOver={(e) => { e.preventDefault(); setSeret(true); }} onDragLeave={() => setSeret(false)}
                     onDrop={(e) => { e.preventDefault(); setSeret(false); pilihFoto(e.dataTransfer.files?.[0] ?? null); }}>
                     {pratinjau
@@ -177,7 +179,7 @@ export default function Presensi() {
                     <input ref={inputFoto} type="file" accept="image/jpeg,image/png" onChange={(e) => pilihFoto(e.target.files?.[0] ?? null)} hidden
                       aria-label="Foto kegiatan" />
                   </div>
-                  {galat.foto_kegiatan && <small className="galat">{galat.foto_kegiatan}</small>}
+                  {error.foto_kegiatan && <small className="error">{error.foto_kegiatan}</small>}
                 </div>
               </div>
 
@@ -193,16 +195,17 @@ export default function Presensi() {
       <section className="kartu">
         <h2>Riwayat presensi</h2>
         <p className="redup">Presensi yang sudah tercatat pada periode aktif.</p>
-        <Pesan jenis="galat">{riwayat.galat}</Pesan>
+        <Pesan jenis="error">{riwayat.error}</Pesan>
         <div className="alat-tabel"><KotakCari {...riwayat.cari} placeholder="Cari praktikum, modul, atau tanggal…" /></div>
         <div className="tabel-bungkus">
           <table className="tabel">
-            <thead><tr><th>No</th><ThUrut k="tanggal" {...riwayat.urut}>Tanggal</ThUrut><ThUrut k="praktikum" {...riwayat.urut}>Praktikum</ThUrut><ThUrut k="modul" {...riwayat.urut}>Modul</ThUrut><ThUrut k="jam_masuk" {...riwayat.urut}>Jam masuk</ThUrut><ThUrut k="jam_keluar" {...riwayat.urut}>Jam keluar</ThUrut><th>Foto</th></tr></thead>
+            <thead><tr><th>No</th><ThUrut k="tanggal" {...riwayat.urut}>Tanggal</ThUrut><ThUrut k="praktikum" {...riwayat.urut}>Praktikum</ThUrut><ThUrut k="prodi" {...riwayat.urut}>Prodi</ThUrut><ThUrut k="modul" {...riwayat.urut}>Modul</ThUrut><ThUrut k="jam_masuk" {...riwayat.urut}>Jam masuk</ThUrut><ThUrut k="jam_keluar" {...riwayat.urut}>Jam keluar</ThUrut><th>Foto</th></tr></thead>
             <tbody>
+                {!riwayat.data && !riwayat.error && <BarisSkel kolom={8} />}
               {riwayat.data?.data.length === 0 && <tr><td colSpan={7} className="redup">Belum ada presensi.</td></tr>}
               {riwayat.data?.data.map((r, i) => (
                 <tr key={r.id_presensi}>
-                  <td>{riwayat.data.halaman.dari + i}</td><td className="nowrap">{tanggal(r.tanggal)}</td><td><b>{r.praktikum}</b></td><td>{r.modul}</td>
+                  <td>{riwayat.data.halaman.dari + i}</td><td className="nowrap">{tanggal(r.tanggal)}</td><td><b>{r.praktikum}</b></td><td>{r.prodi}</td><td>{r.modul}</td>
                   <td>{r.jam_masuk}</td><td>{r.jam_keluar}</td>
                   <td><button type="button" className="tombol tombol-kecil" onClick={() => lihatFoto(r)}>Lihat</button></td>
                 </tr>

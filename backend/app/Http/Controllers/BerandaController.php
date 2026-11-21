@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KelasPraktikum;
 use App\Models\Pengguna;
+use App\Models\Penilaian;
 use App\Models\Periode;
 use App\Models\Praktikum;
 use App\Models\Presensi;
@@ -48,6 +49,7 @@ class BerandaController extends Controller
                 'tanggal' => $p->tanggal->toDateString(),
                 'praktikum' => "{$p->kelas->praktikum->kode_praktikum} · {$p->kelas->praktikum->nama_praktikum}",
                 'kelas' => $p->kelas->kode_kelas,
+                'prodi' => $p->kelas->prodi,
                 'jam_masuk' => substr($p->jam_masuk, 0, 5),
                 'jam_keluar' => substr($p->jam_keluar, 0, 5),
             ]),
@@ -62,17 +64,19 @@ class BerandaController extends Controller
         $jumlahAsisten = $semua->sum('asisten_count');
         $halaman = $this->kelasHalaman($periode, $dosen->id_pengguna)
             ->paginate($this->perHalaman());
+        $penilaian = Penilaian::whereIn('id_kelas', $semua->pluck('id_kelas'))->get()->groupBy('id_kelas');
+        $terkirim = fn ($idKelas) => $penilaian->get($idKelas, collect())->where('status', Penilaian::TERKIRIM)->count();
 
         return [
             'statistik' => [
                 $semua->pluck('id_praktikum')->unique()->count(),
                 $jumlahAsisten,
-                // shortcut: tabel penilaian baru dibuat di iterasi 2 (US08–US10), jadi semua asisten masih belum terkirim.
-                $jumlahAsisten,
+                $jumlahAsisten - $semua->sum(fn ($k) => $terkirim($k->id_kelas)),
             ],
             'baris' => $halaman->getCollection()->map(fn (KelasPraktikum $k) => $this->barisKelas($k) + [
                 'jumlah_asisten' => $k->asisten_count,
-                'status' => 'belum', // shortcut: penilaian baru ada di iterasi 2
+                // Terkirim bila semua asisten kelas sudah terkirim; draft bila sudah ada penilaian yang dimulai.
+                'status' => $k->asisten_count > 0 && $terkirim($k->id_kelas) === $k->asisten_count ? 'terkirim' : ($penilaian->has($k->id_kelas) ? 'draft' : 'belum'),
             ]),
             'halaman' => $this->halaman($halaman),
         ];
@@ -93,14 +97,14 @@ class BerandaController extends Controller
                 ->map(fn (Praktikum $p) => ['id' => $p->id_praktikum, 'nama' => "{$p->kode_praktikum} · {$p->nama_praktikum}"]),
             'prodi_opsi' => KelasPraktikum::whereHas('praktikum', fn ($q) => $q->where('id_periode', $periode->id_periode))->distinct()->orderBy('prodi')->pluck('prodi')
                 ->map(fn ($p) => ['id' => $p, 'nama' => $p]),
-            'baris' => $halaman->getCollection()->map(fn (KelasPraktikum $k) => $this->barisKelas($k) + ['prodi' => $k->prodi, 'dosen' => $k->dosen->nama, 'jumlah_asisten' => $k->asisten_count]),
+            'baris' => $halaman->getCollection()->map(fn (KelasPraktikum $k) => $this->barisKelas($k) + ['dosen' => $k->dosen->nama, 'jumlah_asisten' => $k->asisten_count]),
             'halaman' => $this->halaman($halaman),
         ];
     }
 
     private function barisKelas(KelasPraktikum $k): array
     {
-        return ['kode_mk' => $k->praktikum->kode_praktikum, 'praktikum' => $k->praktikum->nama_praktikum, 'kelas' => $k->kode_kelas];
+        return ['kode_mk' => $k->praktikum->kode_praktikum, 'praktikum' => $k->praktikum->nama_praktikum, 'kelas' => $k->kode_kelas, 'prodi' => $k->prodi];
     }
 
     private function kelasHalaman(Periode $periode, ?int $idDosen = null)
@@ -114,7 +118,7 @@ class BerandaController extends Controller
             ->when(request()->query('prodi'), fn ($q, $prodi) => $q->where('kelas_praktikum.prodi', $prodi))
             ->when($this->pola(), fn ($q, $pola) => $q->where(fn ($w) => $w->whereRaw('LOWER(praktikum.kode_praktikum) LIKE ?', [$pola])
                 ->orWhereRaw('LOWER(praktikum.nama_praktikum) LIKE ?', [$pola])->orWhereRaw('LOWER(kelas_praktikum.kode_kelas) LIKE ?', [$pola])
-                ->orWhereRaw('LOWER(dosen.nama) LIKE ?', [$pola])))
+                ->orWhereRaw('LOWER(kelas_praktikum.prodi) LIKE ?', [$pola])->orWhereRaw('LOWER(dosen.nama) LIKE ?', [$pola])))
             ->when($this->urut([
                 'kode_mk' => 'praktikum.kode_praktikum', 'praktikum' => 'praktikum.nama_praktikum', 'kelas' => 'kelas_praktikum.kode_kelas', 'prodi' => 'kelas_praktikum.prodi',
                 'dosen' => 'dosen.nama', 'jumlah_asisten' => '(select count(*) from penugasan_asisten pa where pa.id_kelas = kelas_praktikum.id_kelas)',

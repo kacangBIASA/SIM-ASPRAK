@@ -1,3 +1,4 @@
+import { PaginasiSkel } from './Skeleton';
 function nomor({ saat_ini: s, terakhir: t }) {
   const set = [...new Set([1, s - 1, s, s + 1, t])].filter((n) => n >= 1 && n <= t).sort((a, b) => a - b);
   return set.flatMap((n, i) => (i && n - set[i - 1] > 1 ? [null, n] : [n]));
@@ -5,7 +6,7 @@ function nomor({ saat_ini: s, terakhir: t }) {
 
 /* Penutup tabel: "Menampilkan a–b dari N data", pilihan baris per halaman, dan nomor halaman (wireframe). `halaman` dari API. */
 export default function Halaman({ halaman, onUbah, onPer }) {
-  if (!halaman) return null;
+  if (!halaman) return <PaginasiSkel />;
   const { saat_ini: s, terakhir: t, total, dari, ke, per } = halaman;
 
   return (

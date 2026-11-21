@@ -6,15 +6,15 @@ import Pesan from './Pesan';
 
 export default function DialogPresensi({ detail, urlFoto, onTutup }) {
   const [foto, setFoto] = useState(null);
-  const [galat, setGalat] = useState('');
+  const [error, setError] = useState('');
 
   async function lihat(p) {
-    setGalat('');
+    setError('');
     try {
       setFoto({ id: p.id_presensi, url: (await api.get(urlFoto(p))).url });
     } catch (e) {
       setFoto(null);
-      setGalat(e.message);
+      setError(e.message);
     }
   }
 
@@ -22,7 +22,7 @@ export default function DialogPresensi({ detail, urlFoto, onTutup }) {
     <Dialog kelas="lebar" judul={`Foto presensi · ${detail.nama}`} onTutup={onTutup}
       aksi={<button type="button" className="tombol" onClick={onTutup}>Tutup</button>}>
       <p className="redup">{detail.praktikum} · {detail.kelas}</p>
-      <Pesan jenis="galat">{galat}</Pesan>
+      <Pesan jenis="error">{error}</Pesan>
       <div className="tabel-bungkus">
         <table className="tabel">
           <thead><tr><th>Tanggal</th><th>Modul</th><th>Jam masuk</th><th>Jam keluar</th><th>Foto</th></tr></thead>

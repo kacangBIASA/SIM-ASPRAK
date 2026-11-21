@@ -26,6 +26,11 @@ class Presensi extends Model
         return $this->belongsTo(KelasPraktikum::class, 'id_kelas', 'id_kelas');
     }
 
+    public function asisten(): BelongsTo
+    {
+        return $this->belongsTo(Pengguna::class, 'id_asisten', 'id_pengguna');
+    }
+
     public function fotoDataUrl(): ?string
     {
         $disk = Storage::disk(config('filesystems.upload_disk'));
@@ -42,6 +47,7 @@ class Presensi extends Model
         return [
             'tanggal' => 'presensi.tanggal', 'jam_masuk' => 'presensi.jam_masuk', 'jam_keluar' => 'presensi.jam_keluar', 'modul' => 'presensi.kegiatan',
             'praktikum' => '(select p.nama_praktikum from kelas_praktikum k join praktikum p on p.id_praktikum = k.id_praktikum where k.id_kelas = presensi.id_kelas)',
+            'prodi' => '(select k.prodi from kelas_praktikum k where k.id_kelas = presensi.id_kelas)',
             'kelas' => '(select k.kode_kelas from kelas_praktikum k where k.id_kelas = presensi.id_kelas)',
         ];
     }

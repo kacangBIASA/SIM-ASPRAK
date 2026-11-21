@@ -31,7 +31,7 @@ class KelasPraktikumController extends Controller
             ->select('kelas_praktikum.*')
             ->where('praktikum.id_periode', $periode->id_periode)
             ->when($this->pola(), fn ($q, $pola) => $q->where(fn ($w) => $w->whereRaw('LOWER(praktikum.kode_praktikum) LIKE ?', [$pola])
-                ->orWhereRaw('LOWER(praktikum.nama_praktikum) LIKE ?', [$pola])->orWhereRaw('LOWER(kelas_praktikum.kode_kelas) LIKE ?', [$pola])))
+                ->orWhereRaw('LOWER(praktikum.nama_praktikum) LIKE ?', [$pola])->orWhereRaw('LOWER(kelas_praktikum.kode_kelas) LIKE ?', [$pola])->orWhereRaw('LOWER(kelas_praktikum.prodi) LIKE ?', [$pola])))
             ->with('praktikum')->withCount('asisten')
             ->when($this->urut([
                 'kode_mk' => 'praktikum.kode_praktikum', 'mata_kuliah' => 'praktikum.nama_praktikum', 'kelas' => 'kelas_praktikum.kode_kelas', 'prodi' => 'kelas_praktikum.prodi',

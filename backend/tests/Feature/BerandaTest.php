@@ -38,7 +38,7 @@ class BerandaTest extends TestCase
             ->assertOk()
             ->assertJsonPath('statistik', [2, '5 Jam', 1])
             ->assertJsonCount(3, 'baris')
-            ->assertJsonPath('baris.0', ['tanggal' => '2026-11-18', 'praktikum' => 'SI3104 · Praktikum SI3104', 'kelas' => 'IS-05-01', 'jam_masuk' => '08:00', 'jam_keluar' => '10:30']);
+            ->assertJsonPath('baris.0', ['tanggal' => '2026-11-18', 'praktikum' => 'SI3104 · Praktikum SI3104', 'kelas' => 'IS-05-01', 'prodi' => 'Sistem Informasi', 'jam_masuk' => '08:00', 'jam_keluar' => '10:30']);
 
         $this->getJson('/api/beranda?q=2026-10')->assertJsonCount(1, 'baris');
         $this->getJson('/api/beranda?q=tidak-ada')->assertJsonCount(0, 'baris');
@@ -54,7 +54,7 @@ class BerandaTest extends TestCase
         $this->getJson('/api/beranda')
             ->assertOk()
             ->assertJsonPath('statistik', [1, 2, 2])
-            ->assertJsonPath('baris', [['kode_mk' => 'SI3104', 'praktikum' => 'Praktikum SI3104', 'kelas' => 'IS-05-01', 'jumlah_asisten' => 2, 'status' => 'belum']]);
+            ->assertJsonPath('baris', [['kode_mk' => 'SI3104', 'praktikum' => 'Praktikum SI3104', 'kelas' => 'IS-05-01', 'prodi' => 'Sistem Informasi', 'jumlah_asisten' => 2, 'status' => 'belum']]);
     }
 
     public function test_beranda_laboran(): void

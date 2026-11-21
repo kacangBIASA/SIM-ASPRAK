@@ -21,19 +21,19 @@ class NomorSuratTest extends TestCase
             ->assertOk()
             ->assertJsonPath('periode', Periode::berjalan()->nama_periode)
             ->assertJsonPath('nomor_surat', null)
-            ->assertJsonCount(1, 'asisten');
+            ->assertJsonMissingPath('asisten');
     }
 
-    public function test_nomor_surat_disimpan_lalu_daftar_asisten_muncul(): void
+    public function test_nomor_surat_dan_penandatangan_disimpan(): void
     {
-        [$asisten] = $this->asistenDenganKelas();
         $this->masukSebagai(Pengguna::factory()->admin()->create());
 
-        $this->postJson('/api/sertifikat/nomor-surat', ['nomor_surat' => ' 123/LAB/2026 '])
+        $this->postJson('/api/sertifikat/nomor-surat', ['nomor_surat' => ' 123/LAB/2026 ', 'nama_penandatangan' => ' Dr. Budi ', 'nip_penandatangan' => '1234567'])
             ->assertOk()
-            ->assertJsonPath('message', 'Nomor surat berhasil disimpan.')
-            ->assertJsonPath('nomor_surat', '123/LAB/2026')
-            ->assertJsonPath('asisten.0.nama', $asisten->nama);
+            ->assertJsonPath('message', 'Nomor surat dan data penandatangan tersimpan pada '.now()->day.' '.Periode::BULAN[now()->month - 1].' '.now()->year.'.')
+            ->assertJsonPath('nama_penandatangan', 'Dr. Budi')
+            ->assertJsonPath('nip_penandatangan', '1234567')
+            ->assertJsonPath('nomor_surat', '123/LAB/2026');
 
         $this->postJson('/api/sertifikat/nomor-surat', ['nomor_surat' => '124/LAB/2026'])->assertOk();
         $this->assertSame('124/LAB/2026', Periode::berjalan()->nomor_surat);

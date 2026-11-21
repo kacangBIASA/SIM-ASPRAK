@@ -1,26 +1,30 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
+import { KerangkaSkel } from './components/Skeleton';
 import Login from './pages/Login';
 import Beranda from './pages/Beranda';
 import Presensi from './pages/Presensi';
 import Bap from './pages/Bap';
 import KelasPraktikum from './pages/KelasPraktikum';
-import NomorSurat from './pages/NomorSurat';
+import Sertifikat from './pages/Sertifikat';
+import Rekapitulasi from './pages/Rekapitulasi';
+import Penilaian from './pages/Penilaian';
+import SegeraHadir from './pages/SegeraHadir';
 import { MENU } from './menu';
 
 /* Halaman per peran lalu per path menu. Rute hanya dibuat untuk menu milik peran pengguna (KF-02), */
 const HALAMAN = {
-  mahasiswa: {},
+  mahasiswa: { '/sertifikat': <SegeraHadir />},
   asisten: { '/presensi': <Presensi />, '/bap': <Bap /> },            // US02, US03
-  dosen: { '/kelas-praktikum': <KelasPraktikum /> },                  // US05, US06
-  admin: { '/sertifikat': <NomorSurat /> },                           // US11
+  dosen: { '/kelas-praktikum': <KelasPraktikum />, '/penilaian': <Penilaian /> },                  // US05, US06, US07
+  admin: { '/rekapitulasi': <Rekapitulasi />, '/sertifikat': <Sertifikat /> },                           // US04, US10, US11
 };
 
 export default function App() {
   const { pengguna, memuat } = useAuth();
 
-  if (memuat) return <div className="layar-muat">Memuat…</div>;
+  if (memuat) return <KerangkaSkel />;
   if (!pengguna) {
     return (
       <Routes>
