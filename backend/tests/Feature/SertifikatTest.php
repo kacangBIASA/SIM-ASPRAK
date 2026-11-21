@@ -149,6 +149,43 @@ class SertifikatTest extends TestCase
         $this->postJson("/api/sertifikat/terbitkan/{$kelas->id_kelas}/{$asisten->id_pengguna}")->assertForbidden();
     }
 
+    public function test_asisten_melihat_dan_mengunduh_sertifikatnya_sendiri(): void
+    {
+        $this->laboran();
+        [$kelas, $asisten, $p] = $this->penilaian();
+        $lain = $this->buatKelas(kodeMk: 'SI3107');
+        $this->tugaskan($asisten, $lain); // praktikum kedua: belum dinilai
+        $this->postJson("/api/sertifikat/terbitkan/{$kelas->id_kelas}/{$asisten->id_pengguna}")->assertCreated();
+        $s = Sertifikat::firstWhere('id_penilaian', $p->id_penilaian);
+
+        $this->masukSebagai($asisten);
+        $r = $this->getJson('/api/sertifikat-saya')->assertOk()->assertJsonCount(2, 'baris');
+        $this->assertContains($s->id_sertifikat, array_column($r->json('baris'), 'id_sertifikat'));
+        $this->getJson('/api/sertifikat-saya?q=SI3107')->assertJsonCount(1, 'baris')->assertJsonPath('baris.0.id_sertifikat', null);
+
+        $t = $this->getJson("/api/sertifikat-saya/{$s->id_sertifikat}/tautan")->assertOk();
+        $this->assertStringStartsWith('Sertifikat_', $t->json('nama_berkas'));
+        $unduh = $this->get($t->json('url'))->assertOk();
+        $this->assertStringContainsString('attachment', $unduh->headers->get('Content-Disposition'));
+    }
+
+    public function test_asisten_tidak_dapat_mengunduh_sertifikat_orang_lain_dan_peran_lain_ditolak(): void
+    {
+        $this->laboran();
+        [$kelas, $asisten, $p] = $this->penilaian();
+        $this->postJson("/api/sertifikat/terbitkan/{$kelas->id_kelas}/{$asisten->id_pengguna}")->assertCreated();
+        $s = Sertifikat::firstWhere('id_penilaian', $p->id_penilaian);
+
+        $orangLain = Pengguna::factory()->asisten()->create();
+        $this->tugaskan($orangLain, $this->buatKelas(kodeMk: 'SI3107')); // peran asisten hanya berlaku bila ada penugasan
+        $this->masukSebagai($orangLain);
+        $this->getJson("/api/sertifikat-saya/{$s->id_sertifikat}/tautan")->assertForbidden();
+        $this->getJson('/api/sertifikat-saya')->assertOk()->assertJsonCount(1, 'baris')->assertJsonPath('baris.0.id_sertifikat', null); // hanya miliknya sendiri
+
+        $this->masukSebagai(Pengguna::factory()->dosen()->create());
+        $this->getJson('/api/sertifikat-saya')->assertForbidden();
+    }
+
     public function test_berkas_dibuat_ulang_dari_pengaturan_periode_saat_ini(): void
     {
         $this->laboran();

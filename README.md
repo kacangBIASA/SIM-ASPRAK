@@ -18,14 +18,18 @@ Dibangun bertahap per user story mengikuti Tabel 4.5.2 (Perencanaan iterasi) pad
 | 1 | US02 Mencatat presensi beserta foto | ✅ |
 | 1 | US03 Memperoleh BAP dari presensi | ✅ |
 | 1 | US11 Mengisi nomor surat sertifikat | ✅ |
-| 2 | US04 · US07 · US08 · US09 · US10 · US12 | ⏳ |
-| 3 | US13 · US14 · US15 · US16 | ⏳ |
+| 2 | US04 Rekapitulasi kehadiran · US07 Praktikum diampu dan daftar asisten · US10 Tanda tangan dan stempel | ✅ |
+| 2 | US08 Mengisi nilai · US09 Simpan draft dan kirim penilaian | ✅ |
+| 2 | US12 Menerbitkan sertifikat | ✅ |
+| 3 | US14 Mengelola dokumen sumber chatbot (KF-21, KF-22) | ✅ |
+| 3 | US15 · US16 Bertanya ke chatbot, pesan di luar cakupan | ✅ |
+| 3 | US13 Unduh sertifikat | ✅ |
 
 Isi saat ini (iterasi 1):
 
 - **Asisten**: Presensi (`/api/presensi/form`, `POST /api/presensi`). BAP (`/api/bap/*`, unduh PDF lewat tautan bertanda tangan).
 - **Dosen**: Kelas Praktikum (`/api/kelas-praktikum`, tambah kelas). Penetapan asisten (`/api/kelas-praktikum/{id}/asisten`).
-- **Laboran**: Sertifikat → nomor surat periode berjalan (`/api/sertifikat/nomor-surat`). Status penilaian & tombol Terbitkan menyusul di US12.
+- **Laboran**: Sertifikat → nomor surat periode berjalan (`/api/sertifikat/nomor-surat`). Tab Penerbitan: syarat (nomor surat, tanda tangan, stempel, penilaian terkirim) + tombol Terbitkan per asisten (`/api/sertifikat/penerbitan`, `/terbitkan/{kelas}/{asisten}`); PDF dibuat DomPDF dan dibuka lewat tautan bertanda tangan.
 - Menu lain → "Segera hadir".
 
 ## Menjalankan

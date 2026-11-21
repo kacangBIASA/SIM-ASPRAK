@@ -124,6 +124,45 @@ class SertifikatController extends Controller
         $s->save();
     }
 
+    /** US13 (KF-21): daftar sertifikat milik asisten yang login pada semua periode (terbit maupun belum). */
+    public function saya(Request $request): JsonResponse
+    {
+        $id = $request->user()->id_pengguna;
+        $halaman = DB::table('penugasan_asisten as pa')
+            ->join('kelas_praktikum as k', 'k.id_kelas', '=', 'pa.id_kelas')
+            ->join('praktikum as p', 'p.id_praktikum', '=', 'k.id_praktikum')
+            ->join('periode as r', 'r.id_periode', '=', 'p.id_periode')
+            ->leftJoin('penilaian as n', fn ($j) => $j->on('n.id_kelas', '=', 'pa.id_kelas')->on('n.id_asisten', '=', 'pa.id_asisten'))
+            ->leftJoin('sertifikat as s', 's.id_penilaian', '=', 'n.id_penilaian')
+            ->where('pa.id_asisten', $id)
+            ->when(request('sertifikat'), fn ($q, $st) => $st === 'terbit' ? $q->whereNotNull('s.id_sertifikat') : $q->whereNull('s.id_sertifikat'))
+            ->when($this->pola(), fn ($q, $pola) => $q->where(fn ($w) => $w->whereRaw('LOWER(p.nama_praktikum) LIKE ?', [$pola])->orWhereRaw('LOWER(r.nama_periode) LIKE ?', [$pola])))
+            ->when($this->urut([
+                'periode' => 'r.tanggal_mulai', 'praktikum' => 'p.nama_praktikum', 'prodi' => 'k.prodi', 'nomor_surat' => 'COALESCE(r.nomor_surat, s.nomor_surat)',
+                'status' => 'CASE WHEN s.id_sertifikat IS NULL THEN 0 ELSE 1 END',
+            ]), fn ($q, $o) => $q->orderByRaw($o))
+            ->orderByDesc('r.tanggal_mulai')->orderBy('p.nama_praktikum')
+            ->select('r.nama_periode', 'p.nama_praktikum', 'k.prodi', 's.id_sertifikat', DB::raw('COALESCE(r.nomor_surat, s.nomor_surat) as nomor_surat'))
+            ->paginate($this->perHalaman());
+
+        return response()->json([
+            'baris' => $halaman->getCollection()->map(fn ($r) => [
+                'id_sertifikat' => $r->id_sertifikat, 'periode' => $r->nama_periode, 'praktikum' => $r->nama_praktikum, 'prodi' => $r->prodi, 'nomor_surat' => $r->nomor_surat,
+            ])->all(),
+            'halaman' => $this->halaman($halaman),
+        ]);
+    }
+
+    /** Tautan unduhan bertanda tangan 5 menit; hanya untuk pemilik sertifikat. */
+    public function tautanSaya(Request $request, Sertifikat $sertifikat): JsonResponse
+    {
+        abort_unless((int) $sertifikat->penilaian->id_asisten === (int) $request->user()->id_pengguna, 403, 'Anda tidak memiliki akses ke sertifikat ini.');
+
+        return response()->json([
+            'url' => URL::temporarySignedRoute('sertifikat.berkas', now()->addMinutes(5), ['sertifikat' => $sertifikat->id_sertifikat, 'unduh' => 1]),
+            'nama_berkas' => $this->namaBerkas($sertifikat),
+        ]);
+    }
 
     private function namaBerkas(Sertifikat $s): string
     {

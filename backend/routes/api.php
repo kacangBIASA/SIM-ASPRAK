@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BapController;
 use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\KelasPraktikumController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\NomorSuratController;
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/beranda', BerandaController::class); // isi beranda sesuai peran (wireframe 2–4)
 
+    // US15 / US16 Bertanya kepada chatbot (semua peran)
+    Route::post('/chatbot/tanya', [ChatbotController::class, 'tanya'])->middleware('throttle:chatbot');
+
     Route::middleware('peran:asisten')->group(function () {
         // US02 / UC02 Mencatat presensi kegiatan
         Route::get('/presensi/form', [PresensiController::class, 'form']);
@@ -34,6 +38,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bap/pilihan', [BapController::class, 'pilihan']);
         Route::post('/bap', [BapController::class, 'susun']);
         Route::get('/bap/{bap}/tautan', [BapController::class, 'tautan']);
+
+        // US13 / UC11 Mengunduh sertifikat
+        Route::get('/sertifikat-saya', [SertifikatController::class, 'saya']);
+        Route::get('/sertifikat-saya/{sertifikat}/tautan', [SertifikatController::class, 'tautanSaya']);
     });
 
     Route::middleware('peran:dosen')->group(function () {
@@ -74,5 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sertifikat/penerbitan', [SertifikatController::class, 'index']);
         Route::post('/sertifikat/terbitkan/{kelas}/{asisten}', [SertifikatController::class, 'terbitkan']);
         Route::get('/sertifikat/{sertifikat}/tautan', [SertifikatController::class, 'tautan']);
+
+        // US14 Mengelola dokumen sumber chatbot
+        Route::get('/chatbot/dokumen', [ChatbotController::class, 'index']);
+        Route::post('/chatbot/dokumen', [ChatbotController::class, 'store'])->middleware('throttle:10,1');
+        Route::delete('/chatbot/dokumen/{dokumen}', [ChatbotController::class, 'destroy']);
     });
 });
