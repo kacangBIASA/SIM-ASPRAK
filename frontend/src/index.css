@@ -168,7 +168,6 @@ th[aria-sort='ascending'] .th-urut span, th[aria-sort='descending'] .th-urut spa
 .login-merek p { color: var(--redup); font-size: .85rem; }
 .login-panel .kartu { padding: 36px; gap: 20px; border-radius: 16px; }
 .login-petunjuk { text-align: center; color: var(--redup); font-size: .75rem; }
-.login-hakcipta { text-align: center; color: #959597; font-size: .75rem; margin-top: 1.25rem; }
 
 @media (max-width: 989px) {
   .sidebar { position: fixed; z-index: 40; left: 0; transform: translateX(-100%); transition: transform .2s; }

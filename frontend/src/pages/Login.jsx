@@ -76,7 +76,6 @@ export default function Login() {
           </button>
           <p className="login-petunjuk">Peran pengguna dikenali otomatis dari akun yang dipakai.</p>
         </form>
-        <p className="login-hakcipta">© 2026 Laboratorium Telkom University Surabaya</p>
       </div>
     </div>
   );
