@@ -111,6 +111,7 @@ class SertifikatController extends Controller
 
     private function segarkanBerkas(Sertifikat $s): void
     {
+
         $disk = Storage::disk(config('filesystems.upload_disk'));
         $penilaian = $s->penilaian()->with('komponen', 'asisten', 'kelas.praktikum.periode')->first();
         $periode = $penilaian->kelas->praktikum->periode;

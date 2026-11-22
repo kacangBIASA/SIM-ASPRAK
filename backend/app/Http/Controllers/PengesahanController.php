@@ -37,6 +37,8 @@ class PengesahanController extends Controller
         ], [
             'required_without' => 'Pilih berkas tanda tangan atau stempel.',
             'file' => 'Berkas gagal diunggah.',
+            // Berkas di atas upload_max_filesize PHP ditolak sebelum aturan max berjalan, lalu jatuh ke aturan uploaded.
+            'uploaded' => 'Berkas gagal diunggah. Ukuran gambar maksimal 2 MB.',
             'mimes' => 'Format gambar harus PNG atau JPG.',
             'max' => 'Ukuran gambar maksimal 2 MB.',
         ]);

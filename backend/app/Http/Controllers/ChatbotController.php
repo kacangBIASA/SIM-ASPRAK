@@ -82,6 +82,7 @@ class ChatbotController extends Controller
             'berkas.required' => 'Pilih berkas dokumen terlebih dahulu.',
             'berkas.mimes' => 'Format dokumen harus PDF, DOCX, TXT, atau MD.',
             'berkas.max' => 'Ukuran dokumen maksimal 10 MB.',
+            'berkas.uploaded' => 'Dokumen gagal diunggah. Ukuran dokumen maksimal 10 MB.', // di atas upload_max_filesize PHP
         ]);
 
         $berkas = $request->file('berkas');
