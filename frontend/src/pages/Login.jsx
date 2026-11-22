@@ -74,7 +74,6 @@ export default function Login() {
           <button className="tombol tombol-utama tombol-penuh" disabled={proses}>
             {proses ? 'Memproses…' : 'Masuk'}
           </button>
-          <p className="login-petunjuk">Peran pengguna dikenali otomatis dari akun yang dipakai.</p>
         </form>
       </div>
     </div>
