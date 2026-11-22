@@ -13,16 +13,15 @@ const Avatar = ({ nama, kelas = '' }) => <span className={`avatar ${kelas}`} ari
 export default function Layout() {
   const { pengguna, keluar } = useAuth();
   const { pathname } = useLocation();
-  const [terbuka, setTerbuka] = useState(false);
-  const [sub, setSub] = useState('');
+  const [terbuka, setTerbuka] = useState(false); // laci menu di layar sempit
+  const [tutup, setTutup] = useState(false); // sidebar disembunyikan di desktop
+  const [, setSub] = useState(''); // diisi halaman lewat SubJudulContext; subjudul tidak lagi ditampilkan
   const menu = MENU[pengguna.peran];
   const aktif = menu.find((m) => m.ke === pathname);
   const judul = aktif?.judul ?? aktif?.label ?? 'Beranda';
-  const remah = ['Beranda', ...(pathname === '/' ? [] : [aktif?.label ?? judul]), ...(sub ? [sub] : [])];
-  const subjudul = pathname === '/' ? 'Ringkasan kegiatan pada periode aktif' : remah.join(' / ');
 
   return (
-    <div className="kerangka">
+    <div className={`kerangka ${tutup ? 'menu-tutup' : ''}`}>
       <aside className={`sidebar ${terbuka ? 'terbuka' : ''}`}>
         <div className="merek">
           <img className="logo" src={logo} alt="Logo" />
@@ -52,12 +51,11 @@ export default function Layout() {
 
       <div className="utama">
         <header className="topbar">
-          <button className="tombol-ikon menu-hp" onClick={() => setTerbuka(true)} aria-label="Buka menu">
+          <button className="tombol-ikon menu-hp" onClick={() => (matchMedia('(max-width: 989px)').matches ? setTerbuka(true) : setTutup((t) => !t))} aria-label="Buka atau tutup menu">
             <Ikon nama="menu" />
           </button>
           <div className="topbar-judul">
             <h1>{judul}</h1>
-            <small className="redup">{subjudul}</small>
           </div>
           <div className="topbar-pengguna">
             {pengguna.periode && <span className="pil-periode"><Ikon nama="kalender" ukuran={15} />{pengguna.periode}</span>}
