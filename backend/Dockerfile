@@ -25,6 +25,9 @@ RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p storage/app/private storage/app/public storage/fonts storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
+# mod_php hanya cocok dengan mpm_prefork; pastikan MPM lain mati (Railway: "More than one MPM loaded").
+RUN a2dismod -f mpm_event mpm_worker || true; a2enmod mpm_prefork
+
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
