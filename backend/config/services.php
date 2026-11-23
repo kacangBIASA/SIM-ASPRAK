@@ -42,7 +42,7 @@ return [
     ],
 
     'chatbot' => [
-        'kontak' => env('CHATBOT_KONTAK', '085850854547'),
+        'kontak' => env('CHATBOT_KONTAK', '08xxxxxx'),
         'batas_menit' => (int) env('CHATBOT_BATAS_MENIT', 20),
         'batas_ip_menit' => (int) env('CHATBOT_BATAS_IP_MENIT', 60),
         'batas_harian' => (int) env('CHATBOT_BATAS_HARIAN', 100),
