@@ -60,8 +60,16 @@ cd frontend
 npm run dev                  # http://localhost:5173
 ```
 
-Akun uji (kata sandi `password`): `asisten1@gmail.com`…`asisten4@gmail.com`, `dosen1@gmail.com`, `dosen2@gmail.com`, `laboran@gmail.com`.
-Seeder juga membuat contoh kelas SI3104 (IS-05-01 dosen1, IS-05-02 dosen2) dan SI3107 (IS-05-01 dosen2) pada periode berjalan; asisten4 belum ditugaskan agar penetapan asisten bisa dicoba.
+Akun uji dari seeder (`php artisan db:seed`), login dengan username atau email `<username>@gmail.com`:
+
+| Kelompok | Username | Kata sandi |
+|---|---|---|
+| Admin/laboran | `admin1`–`admin4` | `laboran123` |
+| Dosen | `dosen1`–`dosen52` | `dosen123` |
+| Asisten aktif, pernah menjabat semester lalu | `mahasiswa1`–`mahasiswa24` | `password` |
+| Asisten aktif baru (pertama kali) | `mahasiswa25`–`mahasiswa40` | `password` |
+| Mahasiswa belum pernah jadi asisten | `mahasiswa41`–`mahasiswa55` | `password` |
+| Alumni asisten (hanya semester lalu) | `mahasiswa56`–`mahasiswa63` | `password` |
 
 Pengujian: `cd backend && php artisan test` (SQLite in-memory).
 

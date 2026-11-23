@@ -11,4 +11,9 @@ php artisan config:cache
 php artisan route:cache
 php artisan migrate --force
 
+# Admin pertama (Render gratis tanpa shell): dibuat bila ADMIN_* diisi; dilewati jika sudah ada.
+if [ -n "$ADMIN_USERNAME" ] && [ -n "$ADMIN_PASSWORD" ]; then
+  php artisan admin:buat "$ADMIN_USERNAME" "${ADMIN_EMAIL:-admin@example.com}" "$ADMIN_PASSWORD" --nama="${ADMIN_NAMA:-Admin}"
+fi
+
 exec apache2-foreground

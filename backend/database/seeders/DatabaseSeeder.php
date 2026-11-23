@@ -12,7 +12,17 @@ use App\Models\Presensi;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-/** US01: akun uji berpola (admin1–4, dosen1–52, mahasiswa1–63), kata sandi `password`. */
+/**
+ * US01: akun uji berpola. Kata sandi: admin `laboran123`, dosen `dosen123`, mahasiswa/asisten `password`.
+ *
+ * Kelompok akun (username mahasiswaN):
+ *  - admin1–4          : admin/laboran
+ *  - dosen1–52         : dosen pengampu kelas
+ *  - mahasiswa1–24     : asisten aktif yang juga pernah menjabat semester lalu (punya sertifikat semester lalu)
+ *  - mahasiswa25–40    : asisten aktif baru, pertama kali menjabat
+ *  - mahasiswa41–55    : mahasiswa yang belum pernah menjadi asisten
+ *  - mahasiswa56–63    : alumni asisten (hanya menjabat semester lalu)
+ */
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
@@ -30,11 +40,11 @@ class DatabaseSeeder extends Seeder
 
         DB::transaction(function () use ($periode, $faker) {
             foreach ([1, 2, 3, 4] as $n) {
-                Pengguna::create(['nama' => $faker->name(), 'username' => "admin$n", 'email' => "admin$n@gmail.com", 'kata_sandi' => 'password', 'peran' => Pengguna::PERAN_ADMIN]);
+                Pengguna::create(['nama' => $faker->name(), 'username' => "admin$n", 'email' => "admin$n@gmail.com", 'kata_sandi' => 'laboran123', 'peran' => Pengguna::PERAN_ADMIN]);
             }
             $dosen = $asisten = [];
             for ($n = 1; $n <= 52; $n++) {
-                $dosen[] = Pengguna::create(['nama' => $faker->name().', M.T.', 'username' => "dosen$n", 'email' => "dosen$n@gmail.com", 'kata_sandi' => 'password', 'peran' => Pengguna::PERAN_DOSEN, 'nomor_induk' => (string) (23860000 + $n)])->id_pengguna;
+                $dosen[] = Pengguna::create(['nama' => $faker->name().', M.T.', 'username' => "dosen$n", 'email' => "dosen$n@gmail.com", 'kata_sandi' => 'dosen123', 'peran' => Pengguna::PERAN_DOSEN, 'nomor_induk' => (string) (23860000 + $n)])->id_pengguna;
             }
             for ($n = 1; $n <= 40; $n++) {
                 $asisten[] = Pengguna::create(['nama' => $faker->name(), 'username' => "mahasiswa$n", 'email' => "mahasiswa$n@gmail.com", 'kata_sandi' => 'password', 'peran' => Pengguna::PERAN_ASISTEN, 'nomor_induk' => (string) (1204230000 + $n)])->id_pengguna;
