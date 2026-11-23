@@ -39,13 +39,6 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-profil">
-          <Avatar nama={pengguna.nama} />
-          <div>
-            <strong>{pengguna.nama}</strong>
-            <small>{NAMA_PERAN[pengguna.peran]}</small>
-          </div>
-        </div>
       </aside>
       {terbuka && <div className="tirai" onClick={() => setTerbuka(false)} />}
 

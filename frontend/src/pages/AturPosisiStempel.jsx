@@ -24,10 +24,23 @@ export default function AturPosisiStempel({ onKembali }) {
   const seret = useRef(null);
   const ubahTtd = useRef(false);
   const ubah = useRef(null); // ubah ukuran lewat sudut: titik diam = sudut seberangnya
+  const latarRef = useRef(null);
+  const [skala, setSkala] = useState(1); // kanvas diperkecil agar muat di layar sempit; koordinat internal tetap LEBAR×TINGGI
 
   useEffect(() => {
     api.get('/sertifikat/pengesahan').then((r) => { setData(r); setP(r.posisi); }).catch((e) => setPesan({ jenis: 'error', teks: e.message }));
   }, []);
+
+  const siap = Boolean(data && p);
+  useEffect(() => {
+    const el = latarRef.current;
+    if (!el) return undefined;
+    const hitung = () => setSkala(Math.min(1, (el.clientWidth - 32) / LEBAR)); // 32 = padding kiri + kanan .sert-latar
+    hitung();
+    const ro = new ResizeObserver(hitung);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [siap]);
 
   if (!data || !p) return pesan.teks ? <Pesan jenis="error">{pesan.teks}</Pesan> : <KanvasSkel />;
 
@@ -102,8 +115,9 @@ export default function AturPosisiStempel({ onKembali }) {
         <section className="kartu">
           <h2>Pratinjau sertifikat</h2>
           <p className="redup kecil">Geser stempel pada pratinjau. Tarik sudut stempel atau tanda tangan untuk mengubah ukurannya, atau gunakan penggeser di samping.</p>
-          <div className="sert-latar">
-            <div className="sert-kanvas" ref={kanvas} style={{ width: LEBAR, height: TINGGI }}>
+          <div className="sert-latar" ref={latarRef}>
+            <div style={{ width: LEBAR * skala, height: TINGGI * skala }}>
+            <div className="sert-kanvas" ref={kanvas} style={{ width: LEBAR, height: TINGGI, transform: `scale(${skala})`, transformOrigin: 'top left', '--balik': 1 / skala }}>
               <img src={latar} alt="" className="sert-t" style={{ left: 0, top: 0, width: LEBAR, height: TINGGI }} />
               <img src={logo} alt="" className="sert-t" style={{ left: 120 * K, top: 44 * K, width: 150 * K }} />
               <i className="sert-t" style={{ left: 120 * K, top: 172 * K, width: 64 * K, height: 4 * K, background: '#c8102e' }} />
@@ -159,6 +173,7 @@ export default function AturPosisiStempel({ onKembali }) {
                   ))}
                 </div>
               )}
+            </div>
             </div>
           </div>
           <p className="redup kecil" style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><Ikon nama="info" ukuran={16} />Stempel tidak dapat keluar dari area sertifikat. Teks pada pratinjau hanya contoh.</p>
