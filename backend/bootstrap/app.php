@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Di belakang proxy Render: percayai X-Forwarded-Proto agar tautan bertanda tangan (BAP, sertifikat) tetap valid di HTTPS.
+        $middleware->trustProxies(at: '*');
         $middleware->api(prepend: [PaksaJson::class]);
         $middleware->alias(['peran' => CekPeran::class]);
     })

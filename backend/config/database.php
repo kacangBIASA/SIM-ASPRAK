@@ -93,8 +93,8 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => 'prefer',
+            'search_path' => env('DB_SEARCH_PATH', 'public'), // Supabase: public,extensions (tipe vector ada di skema extensions)
+            'sslmode' => env('DB_SSLMODE', 'prefer'), // Supabase: require
         ],
 
         'sqlsrv' => [
