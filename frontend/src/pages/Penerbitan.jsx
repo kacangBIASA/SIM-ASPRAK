@@ -15,9 +15,10 @@ const SYARAT = [['nomor_surat', 'Nomor surat terisi'], ['tanda_tangan', 'Tanda t
 /* UC09 Menerbitkan sertifikat (US12, wireframe 7): hanya untuk penilaian terkirim dan bila nomor surat, tanda tangan, serta stempel periode terisi. */
 export default function Penerbitan() {
   const [status, setStatus] = useState('');
+  const [penilaian, setPenilaian] = useState('');
   const [pesan, setPesan] = useState({ jenis: '', teks: '' });
   const [proses, setProses] = useState('');
-  const { data, error, muat, cari, paging, urut } = useDaftar('/sertifikat/penerbitan', STATUS[status]?.[1] ?? {}, 5);
+  const { data, error, muat, cari, paging, urut } = useDaftar('/sertifikat/penerbitan', { ...(STATUS[status]?.[1] ?? {}), ...(penilaian && { penilaian }) }, 5);
   const syarat = data?.syarat;
 
   async function terbitkan(b) {
@@ -70,6 +71,13 @@ export default function Penerbitan() {
         <p className="redup kecil">Sertifikat hanya dapat diterbitkan untuk asisten dengan penilaian terkirim.</p>
         <div className="alat-tabel">
           <KotakCari {...cari} placeholder="Cari NIM atau nama asisten…" />
+          <label className="bidang">
+            <span>Status penilaian</span>
+            <select value={penilaian} onChange={(e) => setPenilaian(e.target.value)}>
+              <option value="">Semua status</option>
+              {Object.entries(PENILAIAN).map(([k, [label]]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </label>
           <label className="bidang">
             <span>Status sertifikat</span>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
