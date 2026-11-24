@@ -60,6 +60,17 @@ export default function DokumenChatbot() {
       <section className="kartu">
         <h2>Unggah dokumen sumber</h2>
         <p className="redup">Format PDF, DOCX, TXT, atau MD, maksimal 10 MB. Dokumen diproses terlebih dahulu sebelum dipakai chatbot.</p>
+        <div className="panel-template">
+          <span className="area-foto-ikon"><Ikon nama="dokumen" ukuran={20} /></span>
+          <div>
+            <strong>Template penulisan dokumen</strong>
+            <small className="redup">Susun dokumen sesuai template agar jawaban chatbot lebih tepat. Hapus bagian petunjuk sebelum diunggah.</small>
+          </div>
+          <div className="aksi">
+            <a className="tombol" href="/template/Contoh-Dokumen-Sumber-Presensi.docx" download>Unduh contoh</a>
+            <a className="tombol" href="/template/Template-Dokumen-Sumber-Chatbot.docx" download><Ikon nama="unduh" ukuran={16} />Unduh template</a>
+          </div>
+        </div>
         <div className={`zona-unggah ${seret ? 'seret' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setSeret(true); }} onDragLeave={() => setSeret(false)}
           onDrop={(e) => { e.preventDefault(); setSeret(false); setBerkas(e.dataTransfer.files?.[0] ?? null); }}>

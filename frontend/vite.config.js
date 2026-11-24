@@ -24,7 +24,7 @@ export default defineConfig({
         ],
       },
       // Hanya cangkang aplikasi yang di-cache; panggilan API tidak, agar data presensi/nilai tidak basi.
-      workbox: { navigateFallbackDenylist: [/^\/api/] },
+      workbox: { navigateFallbackDenylist: [/^\/api/, /^\/template\//] },
     }),
   ],
 })
