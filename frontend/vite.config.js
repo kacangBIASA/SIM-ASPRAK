@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png'],
       manifest: {
-        name: 'Sistem Informasi Manajemen Asisten Praktikum',
-        short_name: 'SIM Asprak',
+        name: 'SIMAS',
+        short_name: 'SIMAS',
         lang: 'id',
         start_url: '/',
         display: 'standalone',
