@@ -12,13 +12,12 @@ import Rekapitulasi from './pages/Rekapitulasi';
 import Penilaian from './pages/Penilaian';
 import DokumenChatbot from './pages/DokumenChatbot';
 import Bantuan from './pages/Bantuan';
-import SegeraHadir from './pages/SegeraHadir';
 import SertifikatSaya from './pages/SertifikatSaya';
 import { MENU } from './menu';
 
 /* Halaman per peran lalu per path menu. Rute hanya dibuat untuk menu milik peran pengguna (KF-02), */
 const HALAMAN = {
-  mahasiswa: { '/sertifikat': <SegeraHadir />, '/bantuan': <Bantuan /> },
+  mahasiswa: { '/sertifikat': <SertifikatSaya />, '/bantuan': <Bantuan /> },
   asisten: { '/presensi': <Presensi />, '/bap': <Bap />, '/sertifikat': <SertifikatSaya />, '/bantuan': <Bantuan /> },            // US02, US03, US13
   dosen: { '/kelas-praktikum': <KelasPraktikum />, '/penilaian': <Penilaian />, '/bantuan': <Bantuan /> },                  // US05, US06, US07
   admin: { '/rekapitulasi': <Rekapitulasi />, '/sertifikat': <Sertifikat />, '/dokumen-chatbot': <DokumenChatbot />, '/bantuan': <Bantuan /> },                           // US04, US10, US11
