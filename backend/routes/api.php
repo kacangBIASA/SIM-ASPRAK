@@ -38,8 +38,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bap/pilihan', [BapController::class, 'pilihan']);
         Route::post('/bap', [BapController::class, 'susun']);
         Route::get('/bap/{bap}/tautan', [BapController::class, 'tautan']);
+    });
 
-        // US13 / UC11 Mengunduh sertifikat
+    // US13 / UC11 Mengunduh sertifikat — mahasiswa (mantan asisten) tetap berhak atas sertifikat miliknya.
+    Route::middleware('peran:asisten,mahasiswa')->group(function () {
         Route::get('/sertifikat-saya', [SertifikatController::class, 'saya']);
         Route::get('/sertifikat-saya/{sertifikat}/tautan', [SertifikatController::class, 'tautanSaya']);
     });

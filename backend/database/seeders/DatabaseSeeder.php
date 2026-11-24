@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $periode = Periode::berjalan();
         $this->dataBanyak($periode);
         $this->semesterLalu(Periode::lalu());
+        $this->call(SertifikatAlumniSeeder::class);
     }
 
     private function dataBanyak(Periode $periode): void

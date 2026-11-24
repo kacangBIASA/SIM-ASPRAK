@@ -81,7 +81,7 @@ class PengesahanController extends Controller
 
     /** Gambar dikirim sebagai data URL agar dapat dipasang di <img> tanpa header token (pola sama dengan foto presensi). */
     /** Latar putih/terang dijadikan transparan (alfa bertahap di tepi agar goresan tidak bergerigi); warna goresan dipertahankan. */
-    private function tanpaLatar(string $path): string
+    public function tanpaLatar(string $path): string
     {
         $asal = imagecreatefromstring(file_get_contents($path));
         [$w, $h] = [imagesx($asal), imagesy($asal)];

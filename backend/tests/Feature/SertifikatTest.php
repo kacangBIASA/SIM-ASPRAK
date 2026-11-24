@@ -186,6 +186,19 @@ class SertifikatTest extends TestCase
         $this->getJson('/api/sertifikat-saya')->assertForbidden();
     }
 
+    public function test_mantan_asisten_berperan_mahasiswa_tetap_dapat_mengunduh_sertifikatnya(): void
+    {
+        $this->laboran();
+        [$kelas, $asisten, $p] = $this->penilaian();
+        $this->postJson("/api/sertifikat/terbitkan/{$kelas->id_kelas}/{$asisten->id_pengguna}")->assertCreated();
+        $s = Sertifikat::firstWhere('id_penilaian', $p->id_penilaian);
+
+        $asisten->update(['peran' => Pengguna::PERAN_MAHASISWA]);
+        $this->masukSebagai($asisten);
+        $this->getJson('/api/sertifikat-saya')->assertOk()->assertJsonPath('baris.0.id_sertifikat', $s->id_sertifikat);
+        $this->getJson("/api/sertifikat-saya/{$s->id_sertifikat}/tautan")->assertOk();
+    }
+
     public function test_berkas_dibuat_ulang_dari_pengaturan_periode_saat_ini(): void
     {
         $this->laboran();
@@ -203,5 +216,25 @@ class SertifikatTest extends TestCase
         $this->assertNotSame($lama, $disk->get($s->fresh()->berkas_sertifikat));
         $this->assertSame('999/BARU/2026', $s->fresh()->nomor_surat);
         $this->getJson('/api/sertifikat/penerbitan')->assertOk();
+    }
+
+    public function test_seeder_alumni_menerbitkan_sertifikat_semester_lalu_yang_dapat_diunduh_mahasiswa(): void
+    {
+        Storage::fake(config('filesystems.upload_disk'));
+        Pengguna::factory()->admin()->create();
+        $lalu = Periode::lalu();
+        $kelas = $this->buatKelas($lalu);
+        $alumni = Pengguna::factory()->mahasiswa()->create();
+        $this->tugaskan($alumni, $kelas);
+
+        $this->seed(\Database\Seeders\SertifikatAlumniSeeder::class);
+        $this->seed(\Database\Seeders\SertifikatAlumniSeeder::class); // dapat diulang tanpa menggandakan
+        $this->assertSame(1, Sertifikat::count());
+
+        $this->masukSebagai($alumni);
+        $baris = $this->getJson('/api/sertifikat-saya')->assertOk()->assertJsonCount(1, 'baris')->json('baris.0');
+        $this->assertNotNull($baris['id_sertifikat']);
+        $t = $this->getJson("/api/sertifikat-saya/{$baris['id_sertifikat']}/tautan")->assertOk();
+        $this->assertStringStartsWith('%PDF', $this->get($t->json('url'))->assertOk()->streamedContent());
     }
 }
