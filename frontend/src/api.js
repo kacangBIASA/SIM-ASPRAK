@@ -67,4 +67,13 @@ export const api = {
     a.click();
     a.remove();
   },
+
+  /** Membuka berkas bertanda tangan di tab baru; klik tautan setelah tautan siap, jalan di HP/PWA juga (tanpa window.open kosong). */
+  async buka(path) {
+    const { url } = await json(await kirim(path));
+    const a = Object.assign(document.createElement('a'), { href: url, target: '_blank', rel: 'noopener' });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
 };

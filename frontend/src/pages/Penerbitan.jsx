@@ -36,12 +36,9 @@ export default function Penerbitan() {
   }
 
   async function lihat(b) {
-    const jendela = window.open('', '_blank'); // dibuka sebelum await agar tidak diblokir peramban
     try {
-      const { url } = await api.get(`/sertifikat/${b.id_sertifikat}/tautan`);
-      if (jendela) { jendela.opener = null; jendela.location.href = url; }
+      await api.buka(`/sertifikat/${b.id_sertifikat}/tautan`);
     } catch (err) {
-      jendela?.close();
       setPesan({ jenis: 'error', teks: err.message });
     }
   }
