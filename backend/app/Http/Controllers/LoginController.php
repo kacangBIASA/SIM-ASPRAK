@@ -19,12 +19,11 @@ class LoginController extends Controller
             'login' => ['required', 'string'],
             'kata_sandi' => ['required', 'string'],
         ], [
-            'login.required' => 'Email atau username wajib diisi.',
+            'login.required' => 'Username wajib diisi.',
             'kata_sandi.required' => 'Kata sandi wajib diisi.',
         ]);
 
-        $kolom = str_contains($data['login'], '@') ? 'email' : 'username';
-        $pengguna = Pengguna::where($kolom, $data['login'])->first();
+        $pengguna = Pengguna::where('username', $data['login'])->first();
 
         $kunci = 'login:'.($pengguna?->id_pengguna ?? mb_strtolower($data['login']));
         if (RateLimiter::tooManyAttempts($kunci, 5)) {
@@ -35,7 +34,7 @@ class LoginController extends Controller
         if (! $pengguna || ! Hash::check($data['kata_sandi'], $pengguna->kata_sandi)) {
             RateLimiter::hit($kunci, 900);
             throw ValidationException::withMessages([
-                'login' => 'Email atau username atau kata sandi salah.',
+                'login' => 'Username atau kata sandi salah.',
             ]);
         }
 

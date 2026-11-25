@@ -14,9 +14,9 @@ class LoginTest extends TestCase
 
     public function test_login_berhasil_mengembalikan_token_dan_peran(): void
     {
-        Pengguna::factory()->dosen()->create(['email' => 'dosen@test.id', 'kata_sandi' => 'rahasia123']);
+        Pengguna::factory()->dosen()->create(['username' => 'dosen1', 'kata_sandi' => 'rahasia123']);
 
-        $res = $this->postJson('/api/login', ['login' => 'dosen@test.id', 'kata_sandi' => 'rahasia123']);
+        $res = $this->postJson('/api/login', ['login' => 'dosen1', 'kata_sandi' => 'rahasia123']);
 
         $res->assertOk()
             ->assertJsonStructure(['token', 'pengguna' => ['id_pengguna', 'nama', 'peran']])
@@ -33,7 +33,7 @@ class LoginTest extends TestCase
         }
         $this->postJson('/api/login', ['login' => 'dosen9', 'kata_sandi' => 'rahasia123'])->assertStatus(422)
             ->assertJsonPath('errors.login.0', fn ($m) => str_contains($m, 'Terlalu banyak percobaan'));
-        $this->postJson('/api/login', ['login' => 'dosen@test.id', 'kata_sandi' => 'rahasia123'])->assertStatus(422);
+        $this->postJson('/api/login', ['login' => 'dosen@test.id', 'kata_sandi' => 'rahasia123'])->assertStatus(422); // email tidak lagi dipakai untuk login
         Pengguna::factory()->dosen()->create(['username' => 'dosen10', 'kata_sandi' => 'rahasia123']);
         $this->postJson('/api/login', ['login' => 'dosen10', 'kata_sandi' => 'rahasia123'])->assertOk();
     }
@@ -51,21 +51,21 @@ class LoginTest extends TestCase
     {
         $this->postJson('/api/login', ['login' => '', 'kata_sandi' => ''])
             ->assertStatus(422)
-            ->assertJsonPath('errors.login.0', 'Email atau username wajib diisi.')
+            ->assertJsonPath('errors.login.0', 'Username wajib diisi.')
             ->assertJsonPath('errors.kata_sandi.0', 'Kata sandi wajib diisi.');
     }
 
     public function test_alternate_4a_kredensial_salah(): void
     {
-        Pengguna::factory()->create(['email' => 'asisten@test.id', 'kata_sandi' => 'benar']);
+        Pengguna::factory()->create(['username' => 'asisten1', 'kata_sandi' => 'benar']);
 
-        $this->postJson('/api/login', ['login' => 'asisten@test.id', 'kata_sandi' => 'salah'])
+        $this->postJson('/api/login', ['login' => 'asisten1', 'kata_sandi' => 'salah'])
             ->assertStatus(422)
-            ->assertJsonPath('errors.login.0', 'Email atau username atau kata sandi salah.');
+            ->assertJsonPath('errors.login.0', 'Username atau kata sandi salah.');
 
-        $this->postJson('/api/login', ['login' => 'tidakada@test.id', 'kata_sandi' => 'benar'])
+        $this->postJson('/api/login', ['login' => 'tidakada', 'kata_sandi' => 'benar'])
             ->assertStatus(422)
-            ->assertJsonPath('errors.login.0', 'Email atau username atau kata sandi salah.');
+            ->assertJsonPath('errors.login.0', 'Username atau kata sandi salah.');
     }
 
     public function test_kata_sandi_disimpan_sebagai_hash(): void
@@ -93,8 +93,8 @@ class LoginTest extends TestCase
 
     public function test_logout_mencabut_token(): void
     {
-        Pengguna::factory()->create(['email' => 'a@test.id', 'kata_sandi' => 'password']);
-        $token = $this->postJson('/api/login', ['login' => 'a@test.id', 'kata_sandi' => 'password'])->json('token');
+        Pengguna::factory()->create(['username' => 'pengguna1', 'kata_sandi' => 'password']);
+        $token = $this->postJson('/api/login', ['login' => 'pengguna1', 'kata_sandi' => 'password'])->json('token');
 
         $this->withToken($token)->postJson('/api/logout')->assertOk();
         $this->assertDatabaseCount('personal_access_tokens', 0);

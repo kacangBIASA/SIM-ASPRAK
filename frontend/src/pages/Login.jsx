@@ -19,7 +19,7 @@ export default function Login() {
     setPesan('');
 
     const g = {};
-    if (!email.trim()) g.login = 'Email atau username wajib diisi.';
+    if (!email.trim()) g.login = 'Username wajib diisi.';
     if (!kataSandi) g.kata_sandi = 'Kata sandi wajib diisi.';
     setError(g);
     if (Object.keys(g).length) return;
@@ -28,7 +28,7 @@ export default function Login() {
     try {
       await masuk(email.trim(), kataSandi);
     } catch (err) {
-      if (err.status === 422 && err.errors?.login?.[0] === 'Email atau username atau kata sandi salah.') {
+      if (err.status === 422 && err.errors?.login?.[0] === 'Username atau kata sandi salah.') {
         setPesan(err.errors.login[0]);
       } else if (err.errors && Object.keys(err.errors).length) {
         setError(Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v[0]])));
@@ -52,8 +52,8 @@ export default function Login() {
           <Pesan jenis="error">{pesan}</Pesan>
 
           <label className="bidang">
-            <span>Email atau Username</span>
-            <input type="text" value={email} autoComplete="username" autoFocus placeholder="Masukkan email atau username"
+            <span>Username</span>
+            <input type="text" value={email} autoComplete="username" autoFocus placeholder="Masukkan username"
               onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(error.login)} />
             {error.login && <small className="error">{error.login}</small>}
           </label>
