@@ -53,7 +53,7 @@ export default function Login() {
 
           <label className="bidang">
             <span>Email atau Username</span>
-            <input type="text" value={email} autoComplete="username" autoFocus
+            <input type="text" value={email} autoComplete="username" autoFocus placeholder="Masukkan email atau username"
               onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(error.login)} />
             {error.login && <small className="error">{error.login}</small>}
           </label>
@@ -62,7 +62,7 @@ export default function Login() {
             <span>Kata sandi</span>
             <span className="input-sandi">
               <input type={intip ? 'text' : 'password'} value={kataSandi} autoComplete="current-password"
-                onChange={(e) => setKataSandi(e.target.value)} aria-invalid={Boolean(error.kata_sandi)} />
+                placeholder="Masukkan kata sandi" onChange={(e) => setKataSandi(e.target.value)} aria-invalid={Boolean(error.kata_sandi)} />
               <button type="button" className="intip-sandi" onClick={() => setIntip((v) => !v)}
                 aria-label={intip ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'} aria-pressed={intip}>
                 <Ikon nama={intip ? 'mataTutup' : 'mata'} />

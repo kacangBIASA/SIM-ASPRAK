@@ -65,7 +65,7 @@ export default function NomorSurat() {
           <div className="baris-penandatangan">
             <label className="bidang">
               <span>Nomor surat <i className="wajib" aria-hidden="true">*</i></span>
-              <input value={nomor} maxLength={50} onChange={(e) => setNomor(e.target.value)} aria-invalid={Boolean(error)} />
+              <input value={nomor} maxLength={50} placeholder="Contoh: 045/LAB-SI/2027" onChange={(e) => setNomor(e.target.value)} aria-invalid={Boolean(error)} />
               {error ? <small className="error">{error}</small> : <small className="petunjuk">Tercetak pada setiap sertifikat. Maksimal 50 karakter.</small>}
             </label>
             <label className="bidang">
@@ -81,12 +81,12 @@ export default function NomorSurat() {
           <div className="baris-penandatangan">
             <label className="bidang">
               <span>Nama penandatangan</span>
-              <input value={penandatangan.nama_penandatangan} maxLength={100} onChange={(e) => setPenandatangan((p) => ({ ...p, nama_penandatangan: e.target.value }))} />
+              <input value={penandatangan.nama_penandatangan} maxLength={100} placeholder="Contoh: Nama Lengkap, S.T., M.T." onChange={(e) => setPenandatangan((p) => ({ ...p, nama_penandatangan: e.target.value }))} />
               <small className="petunjuk">Beserta gelar, seperti yang tercetak di bawah tanda tangan.</small>
             </label>
             <label className="bidang">
               <span>NIP penandatangan</span>
-              <input value={penandatangan.nip_penandatangan} maxLength={30} onChange={(e) => setPenandatangan((p) => ({ ...p, nip_penandatangan: e.target.value }))} />
+              <input value={penandatangan.nip_penandatangan} maxLength={30} placeholder="Contoh: 12345678" onChange={(e) => setPenandatangan((p) => ({ ...p, nip_penandatangan: e.target.value }))} />
               <small className="petunjuk">Maksimal 30 karakter.</small>
             </label>
           </div>

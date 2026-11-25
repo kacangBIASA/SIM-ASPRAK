@@ -113,7 +113,7 @@ function FormKelas({ daftar, onBatal, onTersimpan }) {
       {error[k] ? <small className="error">{error[k]}</small> : petunjuk && <small className="petunjuk">{petunjuk}</small>}
     </label>
   );
-  const teks = (k, max) => <input value={isian[k]} maxLength={max} onChange={ubah(k)} aria-invalid={Boolean(error[k])} />;
+  const teks = (k, max, placeholder) => <input value={isian[k]} maxLength={max} placeholder={placeholder} onChange={ubah(k)} aria-invalid={Boolean(error[k])} />;
 
   return (
     <>
@@ -127,15 +127,15 @@ function FormKelas({ daftar, onBatal, onTersimpan }) {
         <fieldset className="bagian-form">
           <legend>Mata kuliah</legend>
           <div className="grid-nama">
-            {bidang('nama_praktikum', 'Nama mata kuliah', teks('nama_praktikum', 100), 'Nama lengkap mata kuliah praktikum.')}
-            {bidang('kode_praktikum', 'Kode mata kuliah', teks('kode_praktikum', 20), 'Maksimal 20 karakter.')}
+            {bidang('nama_praktikum', 'Nama mata kuliah', teks('nama_praktikum', 100, 'Contoh: Praktikum Basis Data'), 'Nama lengkap mata kuliah praktikum.')}
+            {bidang('kode_praktikum', 'Kode mata kuliah', teks('kode_praktikum', 20, 'Contoh: SI4001'), 'Maksimal 20 karakter.')}
           </div>
         </fieldset>
 
         <fieldset className="bagian-form">
           <legend>Kelas</legend>
           <div className="grid-3">
-            {bidang('kode_kelas', 'Kode kelas', teks('kode_kelas', 20), 'Contoh: IS-05-01.')}
+            {bidang('kode_kelas', 'Kode kelas', teks('kode_kelas', 20, 'Contoh: IS-05-01'), 'Contoh: IS-05-01.')}
             {bidang('prodi', 'Prodi', (
               <select value={isian.prodi} onChange={ubah('prodi')} aria-invalid={Boolean(error.prodi)}>
                 <option value="">— Pilih prodi —</option>
