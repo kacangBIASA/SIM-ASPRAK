@@ -62,9 +62,9 @@ class SertifikatAlumniSeeder extends Seeder
         $periode->nomor_surat ??= sprintf('045/LAB-SI/%d', $periode->tanggal_selesai->year);
         $periode->nama_penandatangan ??= $konfig['nama'];
         $periode->nip_penandatangan ??= $konfig['nip'];
-        // Gambar asli (di luar git) dipakai bila ada di akar proyek; bila tidak, gambar contoh buatan. Pengesahan unggahan laboran tidak ditimpa.
+        // Tanda tangan selalu gambar contoh buatan; stempel memakai stempel_contoh.png (di luar git) bila ada. Pengesahan unggahan laboran tidak ditimpa.
         $sumber = [
-            'path_tanda_tangan' => [base_path('../ttd ridho.jpg'), 'contoh-tanda-tangan', 'gambarTandaTangan'],
+            'path_tanda_tangan' => ['', 'contoh-tanda-tangan', 'gambarTandaTangan'],
             'path_stempel' => [base_path('../stempel_contoh.png'), 'contoh-stempel', 'gambarStempel'],
         ];
         foreach ($sumber as $kolom => [$berkas, $nama, $buat]) {
